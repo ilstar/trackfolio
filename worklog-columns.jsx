@@ -181,7 +181,7 @@ const WorklogColumns = (() => {
 
                 out.push(
                   <div key={'ax' + row.key}
-                    className={`wlCol-axis is-monday ${containsToday ? 'is-today' : ''} ${isFirstOfMonth ? 'is-month-start' : ''}`}>
+                    className={`wlCol-axis is-week is-monday ${containsToday ? 'is-today' : ''} ${isFirstOfMonth ? 'is-month-start' : ''}`}>
                     {isFirstOfMonth && (
                       <div className="wlCol-axis-month">{U.monthShort(m)}</div>
                     )}
