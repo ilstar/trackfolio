@@ -1,0 +1,114 @@
+// Main app shell — tabs + tweaks bar + the active view
+const { useState } = React;
+
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function Seg({ value, options, onChange }) {
+  return (
+    <div className="tweaks-seg">
+      {options.map(opt => (
+        <button
+          key={opt.value}
+          className={value === opt.value ? 'is-on' : ''}
+          onClick={() => onChange(opt.value)}
+        >{opt.label}</button>
+      ))}
+    </div>
+  );
+}
+
+function App() {
+  const [view, setView] = useState('columns');
+  const [scale, setScale] = useState('month');
+  const [density, setDensity] = useState('medium');
+  const [groupByProject, setGroupByProject] = useState(false);
+
+  const today = window.WorklogData.TODAY;
+  const monthLabel = MONTH_NAMES[today.getMonth()] + ' ' + today.getFullYear();
+
+  const totalEntries = window.WorklogData.ENTRIES.length;
+  const projectCount = window.WorklogData.PROJECTS.length + 1; // +1 for "No project"
+
+  const tabs = [
+    { value: 'columns', label: 'Project columns' },
+    { value: 'feed', label: 'Daily feed' },
+  ];
+
+  return (
+    <div className="app">
+      <div className="tabs-bar">
+        <div className="tabs">
+          {tabs.map(t => (
+            <button
+              key={t.value}
+              className={`tab ${view === t.value ? 'is-on' : ''}`}
+              onClick={() => setView(t.value)}
+            >{t.label}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="tweaks-bar">
+        <div className="tweaks-group">
+          <span className="tweaks-label">Time scale</span>
+          <Seg
+            value={scale}
+            onChange={setScale}
+            options={[
+              { value: 'week', label: 'Week' },
+              { value: 'month', label: 'Month' },
+              { value: 'quarter', label: 'Quarter' },
+              { value: 'year', label: 'Year' },
+            ]}
+          />
+        </div>
+        <div className="tweaks-group">
+          <span className="tweaks-label">Density</span>
+          <Seg
+            value={density}
+            onChange={setDensity}
+            options={[
+              { value: 'airy', label: 'Airy' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'dense', label: 'Dense' },
+            ]}
+          />
+        </div>
+        {view === 'feed' && (
+          <label className="tweaks-toggle">
+            <input
+              type="checkbox"
+              checked={groupByProject}
+              onChange={e => setGroupByProject(e.target.checked)}
+            />
+            Group by project
+          </label>
+        )}
+        <span className="tweaks-spacer" />
+        <span className="tweaks-hint">press <b>/</b> or ⌘K to add</span>
+      </div>
+
+      <div className="views">
+        <div className="view-card">
+          {view === 'feed' ? (
+            <window.WorklogCore
+              p="wlC"
+              headerSubtitle={monthLabel + ' · ' + totalEntries + ' entries'}
+              scale={scale}
+              density={density}
+              groupByProject={groupByProject}
+            />
+          ) : (
+            <window.WorklogColumns
+              headerSubtitle={monthLabel + ' · ' + projectCount + ' columns'}
+              scale={scale}
+              density={density}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
