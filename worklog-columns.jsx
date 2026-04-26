@@ -201,14 +201,20 @@ const WorklogColumns = (() => {
                   out.push(
                     <div
                       key={'c' + cellId}
-                      className={`wlCol-cell is-monday ${containsToday ? 'is-today' : ''} ${isFirstOfMonth ? 'is-month-start' : ''} ${hoveredCol === p.id ? 'is-col-hover' : ''}`}
+                      className={`wlCol-cell is-week is-monday ${containsToday ? 'is-today' : ''} ${isFirstOfMonth ? 'is-month-start' : ''} ${hoveredCol === p.id ? 'is-col-hover' : ''}`}
                       onMouseEnter={() => setHoveredCol(p.id)}
                       onMouseLeave={() => setHoveredCol(null)}
                       onClick={() => items.length === 0 && setDialog({ mode: 'add', date: U.fmtDate(monday), projectId: p.id })}
                     >
-                      {items.map(e => (
-                        <Pip key={e.id} entry={e} project={p} hovered={hovered} setHovered={setHovered} showPeek={showPeek} onEdit={() => setDialog({ mode: 'edit', entry: e })} />
-                      ))}
+                      {items.length > 0 && (
+                        <WeekBlock
+                          entries={items}
+                          project={p}
+                          hovered={hovered}
+                          setHovered={setHovered}
+                          onEditEntry={(e) => setDialog({ mode: 'edit', entry: e })}
+                        />
+                      )}
                     </div>
                   );
                 });
@@ -233,6 +239,30 @@ const WorklogColumns = (() => {
             onDelete={dialog.mode === 'edit' ? () => handleDelete(dialog.entry.id) : null}
           />
         )}
+      </div>
+    );
+  }
+
+  function WeekBlock({ entries, project, hovered, setHovered, onEditEntry }) {
+    const color = project.id === '__none' ? '#8e8e92' : project.color;
+    return (
+      <div className="wlCol-weekblock" style={{ '--proj': color }}>
+        {entries.map(e => {
+          const isHovered = hovered === e.id;
+          return (
+            <div
+              key={e.id}
+              className={`wlCol-weekitem t-${e.type} ${isHovered ? 'is-hovered' : ''}`}
+              onMouseEnter={() => setHovered(e.id)}
+              onMouseLeave={() => setHovered(null)}
+              onDoubleClick={(ev) => { ev.stopPropagation(); onEditEntry(e); }}
+              title="Double-click to edit"
+            >
+              <span className="wlCol-weekitem-glyph"><Glyph type={e.type} color={color} size={9} /></span>
+              <span className="wlCol-weekitem-text">{e.text}</span>
+            </div>
+          );
+        })}
       </div>
     );
   }
