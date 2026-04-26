@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Worklog Timeline</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f4;
+      --surface: #ffffff;
+      --surface-strong: #eef2ef;
+      --ink: #1d2521;
+      --muted: #65736d;
+      --line: #d9dfda;
+      --accent: #246b5b;
+      --accent-strong: #174d40;
+      --amber: #a45d18;
+      --red: #a43a3a;
+      --blue: #315f98;
+      --violet: #6854a7;
+      --shadow: 0 14px 34px rgba(42, 52, 48, .10);
+      --radius: 8px;
+      --row-height: 82px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      min-height: 100vh;
+      padding: 24px;
+      background: #fbfbf8;
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .month-pill {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 11px;
+      color: var(--muted);
+      font-size: 13px;
+      background: var(--surface);
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .form-panel {
+      padding: 16px;
+    }
+
+    .form-title,
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 14px;
+      text-transform: uppercase;
+      color: var(--muted);
+      letter-spacing: .08em;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 13px;
+    }
+
+    label {
+      color: #35423d;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--ink);
+      padding: 10px 11px;
+      outline: none;
+      min-height: 40px;
+    }
+
+    textarea {
+      min-height: 86px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(36, 107, 91, .15);
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 14px;
+    }
+
+    .primary-btn,
+    .quiet-btn,
+    .icon-btn {
+      min-height: 40px;
+      border-radius: 7px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .primary-btn {
+      background: var(--accent);
+      color: white;
+      padding: 0 14px;
+      font-weight: 700;
+    }
+
+    .primary-btn:hover {
+      background: var(--accent-strong);
+    }
+
+    .quiet-btn,
+    .icon-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .quiet-btn {
+      padding: 0 12px;
+    }
+
+    .icon-btn {
+      width: 40px;
+      flex: 0 0 40px;
+      font-size: 18px;
+    }
+
+    .project-panel {
+      padding: 14px;
+      overflow: hidden;
+    }
+
+    .project-list {
+      display: grid;
+      gap: 8px;
+      max-height: 236px;
+      overflow: auto;
+      padding-right: 3px;
+    }
+
+    .project-row {
+      display: grid;
+      grid-template-columns: 12px 1fr auto;
+      align-items: center;
+      gap: 9px;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+    }
+
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .project-name {
+      min-width: 0;
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .project-count {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .main {
+      min-width: 0;
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(230px, 1fr) auto auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-wrap input {
+      padding-left: 38px;
+    }
+
+    .search-wrap::before {
+      content: "⌕";
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      translate: 0 -51%;
+      color: var(--muted);
+      font-size: 21px;
+      pointer-events: none;
+    }
+
+    .range-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      padding: 14px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .stat-value {
+      font-size: 24px;
+      line-height: 1.05;
+      font-weight: 800;
+    }
+
+    .stat-label {
+      margin-top: 5px;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+    }
+
+    .timeline-panel {
+      overflow: auto;
+    }
+
+    .timeline-head {
+      display: grid;
+      grid-template-columns: 180px minmax(560px, 1fr);
+      min-width: 740px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+      position: sticky;
+      top: 0;
+      z-index: 3;
+    }
+
+    .timeline-label {
+      padding: 14px 16px;
+      border-right: 1px solid var(--line);
+      font-weight: 800;
+    }
+
+    .days {
+      display: grid;
+      grid-template-columns: repeat(var(--days), minmax(32px, 1fr));
+    }
+
+    .day {
+      min-width: 32px;
+      padding: 8px 4px;
+      border-right: 1px solid #edf0ed;
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.15;
+    }
+
+    .day strong {
+      display: block;
+      margin-top: 2px;
+      color: #34423c;
+      font-size: 13px;
+    }
+
+    .timeline-scroll {
+      overflow: visible;
+    }
+
+    .timeline-row {
+      display: grid;
+      grid-template-columns: 180px minmax(560px, 1fr);
+      min-width: 740px;
+      min-height: var(--row-height);
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .row-project {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: var(--surface);
+      border-right: 1px solid var(--line);
+      padding: 13px 15px;
+      display: grid;
+      grid-template-columns: 12px minmax(0, 1fr);
+      gap: 10px;
+      align-content: start;
+    }
+
+    .row-project strong,
+    .row-project span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .row-project strong {
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .row-project span {
+      grid-column: 2;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .row-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(var(--days), minmax(32px, 1fr));
+      min-height: var(--row-height);
+      background-image: linear-gradient(to right, #edf0ed 1px, transparent 1px);
+      background-size: calc(100% / var(--days)) 100%;
+    }
+
+    .entry-chip {
+      position: absolute;
+      top: var(--top);
+      left: calc(var(--start) * 100% / var(--days) + 5px);
+      width: calc(var(--span) * 100% / var(--days) - 10px);
+      min-width: 26px;
+      min-height: 28px;
+      padding: 7px 9px;
+      border-radius: 7px;
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(32, 40, 36, .16);
+      font-size: 12px;
+      line-height: 1.25;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .entry-chip[data-type="issue"] {
+      outline: 2px solid rgba(164, 58, 58, .25);
+    }
+
+    .entry-chip[data-type="milestone"] {
+      outline: 2px solid rgba(164, 93, 24, .25);
+    }
+
+    .entry-chip:focus-visible {
+      outline: 3px solid rgba(29, 37, 33, .32);
+    }
+
+    .list-panel {
+      padding: 15px;
+    }
+
+    .entry-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .entry-item {
+      display: grid;
+      grid-template-columns: 95px 1fr auto;
+      gap: 12px;
+      align-items: start;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+    }
+
+    .entry-date {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .entry-body {
+      min-width: 0;
+    }
+
+    .entry-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+      min-width: 0;
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 3px 8px;
+      background: var(--surface-strong);
+      color: #394640;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .entry-text {
+      color: #2a3631;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .delete-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 7px;
+      background: #fff;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .delete-btn:hover {
+      border-color: #d8aaaa;
+      color: var(--red);
+      background: #fff7f7;
+    }
+
+    .empty {
+      padding: 26px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 7px;
+      background: #fff;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      max-width: min(360px, calc(100vw - 36px));
+      padding: 12px 14px;
+      border-radius: 7px;
+      background: #1d2521;
+      color: #fff;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        min-height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .range-controls {
+        overflow: auto;
+        padding-bottom: 2px;
+      }
+
+      .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 620px) {
+      .sidebar,
+      .main {
+        padding: 16px;
+      }
+
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .entry-item {
+        grid-template-columns: 1fr auto;
+      }
+
+      .entry-date {
+        grid-column: 1 / -1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Worklog</h1>
+        <div class="month-pill" id="currentMonth"></div>
+      </div>
+
+      <section class="panel form-panel" aria-labelledby="entryFormTitle">
+        <h2 class="form-title" id="entryFormTitle">New entry</h2>
+        <form id="entryForm">
+          <div class="field">
+            <label for="projectInput">Project</label>
+            <input id="projectInput" name="project" list="projectOptions" autocomplete="off" required>
+            <datalist id="projectOptions"></datalist>
+          </div>
+
+          <div class="split">
+            <div class="field">
+              <label for="dateInput">Date</label>
+              <input id="dateInput" name="date" type="date" required>
+            </div>
+            <div class="field">
+              <label for="typeInput">Type</label>
+              <select id="typeInput" name="type">
+                <option value="note">Note</option>
+                <option value="issue">Issue</option>
+                <option value="milestone">Milestone</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="summaryInput">Summary</label>
+            <textarea id="summaryInput" name="summary" required></textarea>
+          </div>
+
+          <div class="actions">
+            <button class="primary-btn" type="submit">Add entry</button>
+            <button class="quiet-btn" type="button" id="addProjectButton">Add project</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel project-panel" aria-labelledby="projectTitle">
+        <h2 class="section-title" id="projectTitle">Projects</h2>
+        <div class="project-list" id="projectList"></div>
+      </section>
+    </aside>
+
+    <main class="main">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <input id="searchInput" type="search" placeholder="Search projects, notes, issues, milestones">
+        </div>
+        <div class="range-controls" aria-label="Timeline range">
+          <button class="icon-btn" type="button" id="prevButton" title="Previous month" aria-label="Previous month">‹</button>
+          <button class="quiet-btn" type="button" id="todayButton">Today</button>
+          <button class="icon-btn" type="button" id="nextButton" title="Next month" aria-label="Next month">›</button>
+        </div>
+        <select id="typeFilter" aria-label="Entry type filter">
+          <option value="all">All entries</option>
+          <option value="note">Notes</option>
+          <option value="issue">Issues</option>
+          <option value="milestone">Milestones</option>
+        </select>
+      </div>
+
+      <section class="stats" aria-label="Worklog stats">
+        <div class="stat">
+          <div class="stat-value" id="statProjects">0</div>
+          <div class="stat-label">Projects</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statEntries">0</div>
+          <div class="stat-label">Entries</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statIssues">0</div>
+          <div class="stat-label">Issues</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statMilestones">0</div>
+          <div class="stat-label">Milestones</div>
+        </div>
+      </section>
+
+      <section class="panel timeline-panel" aria-labelledby="timelineTitle">
+        <div class="timeline-head">
+          <div class="timeline-label" id="timelineTitle">Timeline</div>
+          <div class="days" id="dayHeader"></div>
+        </div>
+        <div class="timeline-scroll" id="timeline"></div>
+      </section>
+
+      <section class="panel list-panel" aria-labelledby="entriesTitle">
+        <h2 class="section-title" id="entriesTitle">Entries</h2>
+        <div class="entry-list" id="entryList"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const STORAGE_KEY = "worklog-demo-v1";
+    const colors = ["#246b5b", "#315f98", "#a45d18", "#6854a7", "#8b4b67", "#4f7449", "#7a5a28"];
+    const typeLabels = { note: "Note", issue: "Issue", milestone: "Milestone" };
+    const typeColor = { note: "#246b5b", issue: "#a43a3a", milestone: "#a45d18" };
+
+    const today = new Date();
+    const state = {
+      visibleMonth: new Date(today.getFullYear(), today.getMonth(), 1),
+      query: "",
+      typeFilter: "all",
+      data: loadData()
+    };
+
+    const els = {
+      currentMonth: document.querySelector("#currentMonth"),
+      form: document.querySelector("#entryForm"),
+      projectInput: document.querySelector("#projectInput"),
+      projectOptions: document.querySelector("#projectOptions"),
+      dateInput: document.querySelector("#dateInput"),
+      typeInput: document.querySelector("#typeInput"),
+      summaryInput: document.querySelector("#summaryInput"),
+      addProjectButton: document.querySelector("#addProjectButton"),
+      projectList: document.querySelector("#projectList"),
+      searchInput: document.querySelector("#searchInput"),
+      typeFilter: document.querySelector("#typeFilter"),
+      prevButton: document.querySelector("#prevButton"),
+      todayButton: document.querySelector("#todayButton"),
+      nextButton: document.querySelector("#nextButton"),
+      dayHeader: document.querySelector("#dayHeader"),
+      timeline: document.querySelector("#timeline"),
+      entryList: document.querySelector("#entryList"),
+      statProjects: document.querySelector("#statProjects"),
+      statEntries: document.querySelector("#statEntries"),
+      statIssues: document.querySelector("#statIssues"),
+      statMilestones: document.querySelector("#statMilestones"),
+      toast: document.querySelector("#toast")
+    };
+
+    init();
+
+    function init() {
+      els.dateInput.value = toDateInputValue(today);
+      els.form.addEventListener("submit", addEntry);
+      els.addProjectButton.addEventListener("click", addProjectFromInput);
+      els.searchInput.addEventListener("input", event => {
+        state.query = event.target.value.trim().toLowerCase();
+        render();
+      });
+      els.typeFilter.addEventListener("change", event => {
+        state.typeFilter = event.target.value;
+        render();
+      });
+      els.prevButton.addEventListener("click", () => changeMonth(-1));
+      els.nextButton.addEventListener("click", () => changeMonth(1));
+      els.todayButton.addEventListener("click", () => {
+        state.visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        render();
+      });
+      render();
+    }
+
+    function loadData() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.projects) && Array.isArray(parsed.entries)) {
+            return parsed;
+          }
+        } catch (error) {
+          console.warn("Could not parse saved worklog", error);
+        }
+      }
+
+      const y = today.getFullYear();
+      const m = String(today.getMonth() + 1).padStart(2, "0");
+      return {
+        projects: [
+          { id: crypto.randomUUID(), name: "Design System Refresh", color: colors[0] },
+          { id: crypto.randomUUID(), name: "Billing Reliability", color: colors[1] },
+          { id: crypto.randomUUID(), name: "Performance Review Prep", color: colors[2] }
+        ],
+        entries: [
+          sampleEntry("Design System Refresh", `${y}-${m}-03`, "milestone", "Agreed on token naming and component audit scope."),
+          sampleEntry("Billing Reliability", `${y}-${m}-08`, "issue", "Found a retry loop causing duplicate webhook work during provider timeouts."),
+          sampleEntry("Design System Refresh", `${y}-${m}-12`, "note", "Mapped table, filter, and empty-state inconsistencies across admin screens."),
+          sampleEntry("Billing Reliability", `${y}-${m}-18`, "milestone", "Shipped idempotency checks behind the beta flag."),
+          sampleEntry("Performance Review Prep", `${y}-${m}-22`, "note", "Collected customer-impact examples and cross-team collaboration notes.")
+        ]
+      };
+    }
+
+    function sampleEntry(projectName, date, type, summary) {
+      return {
+        id: crypto.randomUUID(),
+        projectName,
+        date,
+        type,
+        summary,
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+    }
+
+    function addEntry(event) {
+      event.preventDefault();
+      const form = new FormData(els.form);
+      const projectName = cleanName(form.get("project"));
+      const date = form.get("date");
+      const type = form.get("type");
+      const summary = String(form.get("summary")).trim();
+
+      if (!projectName || !date || !summary) {
+        showToast("Fill in the project, date, and summary.");
+        return;
+      }
+
+      ensureProject(projectName);
+      state.data.entries.push({
+        id: crypto.randomUUID(),
+        projectName,
+        date,
+        type,
+        summary,
+        createdAt: new Date().toISOString()
+      });
+      state.visibleMonth = new Date(`${date}T00:00:00`);
+      state.visibleMonth = new Date(state.visibleMonth.getFullYear(), state.visibleMonth.getMonth(), 1);
+      els.summaryInput.value = "";
+      saveData();
+      render();
+      showToast("Entry added.");
+    }
+
+    function addProjectFromInput() {
+      const name = cleanName(els.projectInput.value);
+      if (!name) {
+        showToast("Type a project name first.");
+        els.projectInput.focus();
+        return;
+      }
+      const created = ensureProject(name);
+      saveData();
+      render();
+      showToast(created ? "Project added." : "Project already exists.");
+    }
+
+    function ensureProject(name) {
+      const existing = state.data.projects.find(project => sameName(project.name, name));
+      if (existing) return false;
+      state.data.projects.push({
+        id: crypto.randomUUID(),
+        name,
+        color: colors[state.data.projects.length % colors.length]
+      });
+      return true;
+    }
+
+    function deleteEntry(id) {
+      state.data.entries = state.data.entries.filter(entry => entry.id !== id);
+      saveData();
+      render();
+      showToast("Entry deleted.");
+    }
+
+    function changeMonth(offset) {
+      state.visibleMonth = new Date(
+        state.visibleMonth.getFullYear(),
+        state.visibleMonth.getMonth() + offset,
+        1
+      );
+      render();
+    }
+
+    function render() {
+      const days = daysInMonth(state.visibleMonth);
+      document.documentElement.style.setProperty("--days", days.length);
+      els.currentMonth.textContent = monthLabel(state.visibleMonth);
+      renderDayHeader(days);
+      renderProjectOptions();
+      renderProjects();
+      renderStats();
+      renderTimeline(days);
+      renderEntries();
+    }
+
+    function renderDayHeader(days) {
+      els.dayHeader.innerHTML = days.map(day => {
+        const weekday = day.toLocaleDateString(undefined, { weekday: "short" });
+        return `<div class="day">${weekday}<strong>${day.getDate()}</strong></div>`;
+      }).join("");
+    }
+
+    function renderProjectOptions() {
+      els.projectOptions.innerHTML = state.data.projects
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(project => `<option value="${escapeHtml(project.name)}"></option>`)
+        .join("");
+    }
+
+    function renderProjects() {
+      if (!state.data.projects.length) {
+        els.projectList.innerHTML = `<div class="empty">No projects yet.</div>`;
+        return;
+      }
+
+      els.projectList.innerHTML = state.data.projects
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(project => {
+          const count = state.data.entries.filter(entry => sameName(entry.projectName, project.name)).length;
+          return `
+            <div class="project-row">
+              <span class="swatch" style="background:${project.color}"></span>
+              <span class="project-name" title="${escapeHtml(project.name)}">${escapeHtml(project.name)}</span>
+              <span class="project-count">${count}</span>
+            </div>
+          `;
+        }).join("");
+    }
+
+    function renderStats() {
+      const visible = filteredEntries();
+      els.statProjects.textContent = new Set(visible.map(entry => entry.projectName.toLowerCase())).size;
+      els.statEntries.textContent = visible.length;
+      els.statIssues.textContent = visible.filter(entry => entry.type === "issue").length;
+      els.statMilestones.textContent = visible.filter(entry => entry.type === "milestone").length;
+    }
+
+    function renderTimeline(days) {
+      const monthEntries = filteredEntries().filter(entry => isInVisibleMonth(entry.date));
+      const projects = projectsForEntries(monthEntries);
+
+      if (!projects.length) {
+        els.timeline.innerHTML = `<div class="empty">No entries match this month.</div>`;
+        return;
+      }
+
+      els.timeline.innerHTML = projects.map(project => {
+        const entries = monthEntries
+          .filter(entry => sameName(entry.projectName, project.name))
+          .sort((a, b) => a.date.localeCompare(b.date));
+        const chips = entries.map((entry, index) => {
+          const start = new Date(`${entry.date}T00:00:00`).getDate() - 1;
+          const top = 10 + (index % 2) * 34;
+          const color = entry.type === "note" ? project.color : typeColor[entry.type];
+          return `
+            <button class="entry-chip" data-type="${entry.type}" title="${escapeHtml(entry.summary)}" style="--start:${start};--span:1;--top:${top}px;background:${color}">
+              ${escapeHtml(typeLabels[entry.type])}: ${escapeHtml(entry.summary)}
+            </button>
+          `;
+        }).join("");
+
+        return `
+          <div class="timeline-row">
+            <div class="row-project">
+              <span class="swatch" style="background:${project.color}"></span>
+              <strong title="${escapeHtml(project.name)}">${escapeHtml(project.name)}</strong>
+              <span>${entries.length} ${entries.length === 1 ? "entry" : "entries"}</span>
+            </div>
+            <div class="row-grid">${chips}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderEntries() {
+      const entries = filteredEntries().sort((a, b) => b.date.localeCompare(a.date));
+      if (!entries.length) {
+        els.entryList.innerHTML = `<div class="empty">No entries match the current filters.</div>`;
+        return;
+      }
+
+      els.entryList.innerHTML = entries.map(entry => {
+        const project = findProject(entry.projectName);
+        return `
+          <article class="entry-item">
+            <div class="entry-date">${formatDate(entry.date)}</div>
+            <div class="entry-body">
+              <div class="entry-meta">
+                <span class="swatch" style="background:${project.color}"></span>
+                <span class="badge">${escapeHtml(entry.projectName)}</span>
+                <span class="badge">${escapeHtml(typeLabels[entry.type])}</span>
+              </div>
+              <div class="entry-text">${escapeHtml(entry.summary)}</div>
+            </div>
+            <button class="delete-btn" type="button" aria-label="Delete entry" title="Delete entry" data-delete="${entry.id}">×</button>
+          </article>
+        `;
+      }).join("");
+
+      els.entryList.querySelectorAll("[data-delete]").forEach(button => {
+        button.addEventListener("click", () => deleteEntry(button.dataset.delete));
+      });
+    }
+
+    function filteredEntries() {
+      return state.data.entries.filter(entry => {
+        const queryMatches = !state.query ||
+          entry.projectName.toLowerCase().includes(state.query) ||
+          entry.summary.toLowerCase().includes(state.query) ||
+          typeLabels[entry.type].toLowerCase().includes(state.query);
+        const typeMatches = state.typeFilter === "all" || entry.type === state.typeFilter;
+        return queryMatches && typeMatches;
+      });
+    }
+
+    function projectsForEntries(entries) {
+      const names = new Set(entries.map(entry => entry.projectName.toLowerCase()));
+      const existing = state.data.projects.filter(project => names.has(project.name.toLowerCase()));
+      const missing = entries
+        .filter(entry => !existing.some(project => sameName(project.name, entry.projectName)))
+        .map(entry => findProject(entry.projectName));
+      return [...existing, ...missing].sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    function findProject(name) {
+      return state.data.projects.find(project => sameName(project.name, name)) || {
+        name,
+        color: colors[0]
+      };
+    }
+
+    function isInVisibleMonth(dateValue) {
+      const date = new Date(`${dateValue}T00:00:00`);
+      return date.getFullYear() === state.visibleMonth.getFullYear() &&
+        date.getMonth() === state.visibleMonth.getMonth();
+    }
+
+    function daysInMonth(date) {
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const count = new Date(year, month + 1, 0).getDate();
+      return Array.from({ length: count }, (_, index) => new Date(year, month, index + 1));
+    }
+
+    function monthLabel(date) {
+      return date.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    }
+
+    function formatDate(dateValue) {
+      return new Date(`${dateValue}T00:00:00`).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      });
+    }
+
+    function toDateInputValue(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function cleanName(value) {
+      return String(value).replace(/\s+/g, " ").trim();
+    }
+
+    function sameName(a, b) {
+      return String(a).toLowerCase() === String(b).toLowerCase();
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      window.clearTimeout(showToast.timeout);
+      showToast.timeout = window.setTimeout(() => {
+        els.toast.classList.remove("show");
+      }, 1800);
+    }
+  </script>
+</body>
+</html>
