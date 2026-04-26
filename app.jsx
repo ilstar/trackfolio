@@ -19,7 +19,7 @@ function Seg({ value, options, onChange }) {
 
 function App() {
   const [view, setView] = useState('columns');
-  const [scale, setScale] = useState('month');
+  const [scale, setScale] = useState('week');
   const [density, setDensity] = useState('medium');
   const [groupByProject, setGroupByProject] = useState(false);
 
@@ -55,10 +55,8 @@ function App() {
             value={scale}
             onChange={setScale}
             options={[
+              { value: 'day', label: 'Day' },
               { value: 'week', label: 'Week' },
-              { value: 'month', label: 'Month' },
-              { value: 'quarter', label: 'Quarter' },
-              { value: 'year', label: 'Year' },
             ]}
           />
         </div>

@@ -42,10 +42,6 @@ const WorklogColumns = (() => {
     const dayPx = density === 'airy' ? 40 : density === 'dense' ? 22 : 30;
     const showPeek = density !== 'dense';
 
-    const showEveryDay = scale === 'week';
-    const showWeekly = scale === 'month';
-    const showMonthly = scale === 'quarter' || scale === 'year';
-
     const indexed = useMemo(() => {
       const m = new Map();
       for (const e of entries) {
@@ -55,6 +51,15 @@ const WorklogColumns = (() => {
       }
       return m;
     }, [entries]);
+
+    const rows = useMemo(() => {
+      if (scale === 'week') {
+        return U.groupByWeek(dates).map(w => ({
+          type: 'week', key: w.key, monday: w.monday, dates: w.dates,
+        }));
+      }
+      return dates.map(ds => ({ type: 'day', key: ds, date: ds }));
+    }, [dates, scale]);
 
     const columns = [...projects, { id: '__none', name: 'No project', color: '#c4c4c8' }];
 
@@ -106,7 +111,7 @@ const WorklogColumns = (() => {
           <span><Glyph type="milestone" /> milestone</span>
         </div>
 
-        <div className="wlCol-grid" style={{ gridTemplateColumns: `64px repeat(${columns.length}, minmax(140px, 1fr))` }}>
+        <div className="wlCol-grid" style={{ gridTemplateColumns: `84px repeat(${columns.length}, minmax(140px, 1fr))` }}>
           <div className="wlCol-corner" />
           {columns.map(p => (
             <div key={p.id} className="wlCol-colhead" style={{ '--proj': p.color }}>
@@ -121,51 +126,93 @@ const WorklogColumns = (() => {
           {(() => {
             const out = [];
             let lastMonth = -1;
-            dates.forEach((ds) => {
-              const d = U.parseDate(ds);
-              const m = d.getMonth();
-              const isToday = U.sameDay(d, TODAY);
-              const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-              const isMonday = d.getDay() === 1;
-              const isFirstOfMonth = m !== lastMonth;
-              if (isFirstOfMonth) lastMonth = m;
+            const todayStr = U.fmtDate(TODAY);
 
-              let dayLabel = null;
-              if (showEveryDay) dayLabel = d.getDate();
-              else if (showWeekly && (isMonday || isFirstOfMonth)) dayLabel = d.getDate();
-              else if (showMonthly && isFirstOfMonth) dayLabel = d.getDate();
+            rows.forEach((row) => {
+              if (row.type === 'day') {
+                const ds = row.date;
+                const d = U.parseDate(ds);
+                const m = d.getMonth();
+                const isToday = U.sameDay(d, TODAY);
+                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                const isMonday = d.getDay() === 1;
+                const isFirstOfMonth = m !== lastMonth;
+                if (isFirstOfMonth) lastMonth = m;
 
-              out.push(
-                <div key={'ax' + ds}
-                  className={`wlCol-axis ${isToday ? 'is-today' : ''} ${isWeekend ? 'is-weekend' : ''} ${isMonday ? 'is-monday' : ''} ${isFirstOfMonth ? 'is-month-start' : ''}`}>
-                  {isFirstOfMonth && (
-                    <div className="wlCol-axis-month">{U.monthShort(m)}</div>
-                  )}
-                  {dayLabel !== null && (
-                    <div className="wlCol-axis-day">{dayLabel}</div>
-                  )}
-                  {isToday && <div className="wlCol-axis-today">now</div>}
-                </div>
-              );
-
-              columns.forEach((p) => {
-                const k = p.id + '|' + ds;
-                const items = indexed.get(k) || [];
-                const cellId = ds + '|' + p.id;
                 out.push(
-                  <div
-                    key={'c' + cellId}
-                    className={`wlCol-cell ${isToday ? 'is-today' : ''} ${isWeekend ? 'is-weekend' : ''} ${isMonday ? 'is-monday' : ''} ${isFirstOfMonth ? 'is-month-start' : ''} ${hoveredCol === p.id ? 'is-col-hover' : ''}`}
-                    onMouseEnter={() => setHoveredCol(p.id)}
-                    onMouseLeave={() => setHoveredCol(null)}
-                    onClick={() => items.length === 0 && setDialog({ mode: 'add', date: ds, projectId: p.id })}
-                  >
-                    {items.map(e => (
-                      <Pip key={e.id} entry={e} project={p} hovered={hovered} setHovered={setHovered} showPeek={showPeek} onEdit={() => setDialog({ mode: 'edit', entry: e })} />
-                    ))}
+                  <div key={'ax' + ds}
+                    className={`wlCol-axis ${isToday ? 'is-today' : ''} ${isWeekend ? 'is-weekend' : ''} ${isMonday ? 'is-monday' : ''} ${isFirstOfMonth ? 'is-month-start' : ''}`}>
+                    {isFirstOfMonth && (
+                      <div className="wlCol-axis-month">{U.monthShort(m)}</div>
+                    )}
+                    <div className="wlCol-axis-dow">{U.dayShort(d.getDay())}</div>
+                    <div className="wlCol-axis-day">{d.getDate()}</div>
+                    {isToday && <div className="wlCol-axis-today">now</div>}
                   </div>
                 );
-              });
+
+                columns.forEach((p) => {
+                  const k = p.id + '|' + ds;
+                  const items = indexed.get(k) || [];
+                  const cellId = ds + '|' + p.id;
+                  out.push(
+                    <div
+                      key={'c' + cellId}
+                      className={`wlCol-cell ${isToday ? 'is-today' : ''} ${isWeekend ? 'is-weekend' : ''} ${isMonday ? 'is-monday' : ''} ${isFirstOfMonth ? 'is-month-start' : ''} ${hoveredCol === p.id ? 'is-col-hover' : ''}`}
+                      onMouseEnter={() => setHoveredCol(p.id)}
+                      onMouseLeave={() => setHoveredCol(null)}
+                      onClick={() => items.length === 0 && setDialog({ mode: 'add', date: ds, projectId: p.id })}
+                    >
+                      {items.map(e => (
+                        <Pip key={e.id} entry={e} project={p} hovered={hovered} setHovered={setHovered} showPeek={showPeek} onEdit={() => setDialog({ mode: 'edit', entry: e })} />
+                      ))}
+                    </div>
+                  );
+                });
+              } else {
+                // 'week' row — aggregate the week's entries per project
+                const monday = row.monday;
+                const sunday = new Date(monday);
+                sunday.setDate(monday.getDate() + 6);
+                const m = monday.getMonth();
+                const isFirstOfMonth = m !== lastMonth;
+                if (isFirstOfMonth) lastMonth = m;
+                const containsToday = row.dates.includes(todayStr);
+
+                out.push(
+                  <div key={'ax' + row.key}
+                    className={`wlCol-axis is-monday ${containsToday ? 'is-today' : ''} ${isFirstOfMonth ? 'is-month-start' : ''}`}>
+                    {isFirstOfMonth && (
+                      <div className="wlCol-axis-month">{U.monthShort(m)}</div>
+                    )}
+                    <div className="wlCol-axis-day">{`${monday.getDate()}–${sunday.getDate()}`}</div>
+                    {containsToday && <div className="wlCol-axis-today">now</div>}
+                  </div>
+                );
+
+                columns.forEach((p) => {
+                  const items = [];
+                  for (const ds of row.dates) {
+                    const its = indexed.get(p.id + '|' + ds);
+                    if (its) items.push(...its);
+                  }
+                  items.sort((a, b) => b.date.localeCompare(a.date));
+                  const cellId = row.key + '|' + p.id;
+                  out.push(
+                    <div
+                      key={'c' + cellId}
+                      className={`wlCol-cell is-monday ${containsToday ? 'is-today' : ''} ${isFirstOfMonth ? 'is-month-start' : ''} ${hoveredCol === p.id ? 'is-col-hover' : ''}`}
+                      onMouseEnter={() => setHoveredCol(p.id)}
+                      onMouseLeave={() => setHoveredCol(null)}
+                      onClick={() => items.length === 0 && setDialog({ mode: 'add', date: U.fmtDate(monday), projectId: p.id })}
+                    >
+                      {items.map(e => (
+                        <Pip key={e.id} entry={e} project={p} hovered={hovered} setHovered={setHovered} showPeek={showPeek} onEdit={() => setDialog({ mode: 'edit', entry: e })} />
+                      ))}
+                    </div>
+                  );
+                });
+              }
             });
             return out;
           })()}

@@ -50,8 +50,9 @@ const WorklogCore = (() => {
 
     const rowGap = density === 'airy' ? 48 : density === 'dense' ? 14 : 26;
     const dayPad = density === 'airy' ? 24 : density === 'dense' ? 10 : 16;
-    const compactDays = scale === 'quarter' || scale === 'year';
-    const collapseEmpty = scale !== 'week';
+    const compactDays = false;
+    const collapseEmpty = scale !== 'day';
+    const groupByWeek = scale === 'week';
 
     const resolveProject = (rawName) => {
       if (!rawName) return null;
@@ -128,6 +129,47 @@ const WorklogCore = (() => {
           {(() => {
             const out = [];
             let lastMonth = -1;
+
+            if (groupByWeek) {
+              const weeks = U.groupByWeek(dates);
+              weeks.forEach((w) => {
+                const weekEntries = w.dates
+                  .flatMap(ds => byDate.get(ds) || [])
+                  .sort((a, b) => b.date.localeCompare(a.date));
+                if (weekEntries.length === 0) return;
+
+                const m = w.monday.getMonth();
+                if (m !== lastMonth) {
+                  lastMonth = m;
+                  out.push(
+                    <div key={'m' + w.key} className={cn('month')}>
+                      <span className={cn('month-label')}>{U.monthName(m)}</span>
+                      <span className={cn('month-year')}>{w.monday.getFullYear()}</span>
+                      <span className={cn('month-rule')} />
+                    </div>
+                  );
+                }
+
+                out.push(
+                  <WeekRow
+                    key={w.key}
+                    p={p}
+                    weekKey={w.key}
+                    monday={w.monday}
+                    entries={weekEntries}
+                    projects={projects}
+                    groupByProject={groupByProject}
+                    compact={compactDays}
+                    hovered={hovered}
+                    setHovered={setHovered}
+                    onAdd={() => setDialog({ mode: 'add', date: U.fmtDate(w.monday) })}
+                    onEdit={(entry) => setDialog({ mode: 'edit', entry })}
+                  />
+                );
+              });
+              return out;
+            }
+
             let runEmpty = 0;
             dates.forEach((ds) => {
               const d = U.parseDate(ds);
@@ -187,6 +229,73 @@ const WorklogCore = (() => {
             onDelete={dialog.mode === 'edit' ? () => handleDelete(dialog.entry.id) : null}
           />
         )}
+      </div>
+    );
+  }
+
+  function WeekRow({ p, weekKey, monday, entries, projects, groupByProject, compact, hovered, setHovered, onAdd, onEdit }) {
+    const cn = (s) => `${p}-${s}`;
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const todayStr = U.fmtDate(TODAY);
+    const containsToday = entries.some(e => e.date === todayStr) ||
+      (monday <= TODAY && TODAY <= sunday);
+
+    const grouped = groupByProject
+      ? entries.reduce((acc, e) => {
+          const k = e.project || '__none';
+          (acc[k] = acc[k] || []).push(e);
+          return acc;
+        }, {})
+      : null;
+
+    const renderEntry = (e) => {
+      const d = U.parseDate(e.date);
+      return (
+        <div key={e.id} className={cn('week-line')}>
+          <div className={cn('week-line-date')}>
+            {U.dayShort(d.getDay())} {d.getDate()}
+          </div>
+          <Entry p={p} entry={e} projects={projects} compact={compact} hovered={hovered} setHovered={setHovered} onEdit={onEdit} />
+        </div>
+      );
+    };
+
+    return (
+      <div className={`${cn('day')} is-monday ${containsToday ? 'is-today' : ''} ${entries.length === 0 ? 'is-empty' : ''}`}>
+        <div className={cn('day-meta')}>
+          <div className={cn('day-num')}>{`${monday.getDate()}–${sunday.getDate()}`}</div>
+          <div className={cn('day-dow')}>{U.monthShort(monday.getMonth())}</div>
+          {containsToday && <div className={cn('day-rel')}>This week</div>}
+        </div>
+        <div className={cn('day-body')}>
+          {entries.length === 0 && (
+            <div className={cn('day-blank')} onClick={onAdd}>+ add an entry</div>
+          )}
+          {!groupByProject && entries.map(renderEntry)}
+          {groupByProject && Object.entries(grouped).map(([pid, es]) => {
+            const proj = pid === '__none' ? null : projects.find(pp => pp.id === pid);
+            return (
+              <div key={pid} className={cn('pgroup')}>
+                <div className={cn('pgroup-head')} style={{ '--proj': proj?.color || 'var(--ink-3)' }}>
+                  <span className={cn('pgroup-dot')} />
+                  {proj ? proj.name : 'No project'}
+                </div>
+                {es.map(e => {
+                  const d = U.parseDate(e.date);
+                  return (
+                    <div key={e.id} className={cn('week-line')}>
+                      <div className={cn('week-line-date')}>
+                        {U.dayShort(d.getDay())} {d.getDate()}
+                      </div>
+                      <Entry p={p} entry={e} projects={projects} compact={compact} hovered={hovered} setHovered={setHovered} onEdit={onEdit} hideProject />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }

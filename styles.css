@@ -435,6 +435,22 @@ body {
   padding: 0;
 }
 
+.wlC-week-line {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 8px;
+  align-items: baseline;
+}
+.wlC-week-line-date {
+  font-size: 11px;
+  color: var(--ink-4);
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.02em;
+  text-align: right;
+  padding-top: 6px;
+}
+
 .wlC-pgroup { margin-bottom: 4px; }
 .wlC-pgroup-head {
   display: inline-flex;
@@ -784,6 +800,13 @@ body {
   color: var(--ink-3);
   min-width: 14px;
   text-align: right;
+}
+.wlCol-axis-dow {
+  color: var(--ink-4);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
 }
 .wlCol-axis.is-weekend .wlCol-axis-day {
   color: var(--ink-4);
