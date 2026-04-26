@@ -605,7 +605,8 @@ body {
   align-items: center;
   gap: 8px;
 }
-.wlC-sugg-row:hover { background: var(--bg-2); }
+.wlC-sugg-row:hover,
+.wlC-sugg-row.is-selected { background: var(--bg-2); }
 .wlC-sugg-dot { width: 7px; height: 7px; border-radius: 50%; }
 .wlC-sugg-new { color: var(--accent); }
 .wlC-submit {
@@ -1075,7 +1076,8 @@ body {
   padding: 7px 10px; font-size: 13px; cursor: pointer;
   display: flex; align-items: center; gap: 8px;
 }
-.wlCol-sugg-row:hover { background: var(--bg-2); }
+.wlCol-sugg-row:hover,
+.wlCol-sugg-row.is-selected { background: var(--bg-2); }
 .wlCol-sugg-dot { width: 7px; height: 7px; border-radius: 50%; }
 .wlCol-sugg-new { color: var(--accent); }
 .wlCol-submit {

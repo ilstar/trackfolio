@@ -390,6 +390,7 @@ const WorklogCore = (() => {
       return projects.find(pr => pr.id === initialEntry.project)?.name || '';
     });
     const [showSugg, setShowSugg] = useState(false);
+    const [selectedIdx, setSelectedIdx] = useState(-1);
     const inputRef = useRef(null);
     useEffect(() => { inputRef.current?.focus(); inputRef.current?.select?.(); }, []);
 
@@ -398,6 +399,36 @@ const WorklogCore = (() => {
       const q = project.toLowerCase();
       return projects.filter(pr => pr.name.toLowerCase().includes(q)).slice(0, 5);
     }, [project, projects]);
+
+    const showCreate = project && !projects.find(pr => pr.name.toLowerCase() === project.toLowerCase());
+    const optionCount = suggestions.length + (showCreate ? 1 : 0);
+
+    useEffect(() => { setSelectedIdx(-1); }, [project]);
+
+    const pickOption = (idx) => {
+      if (idx < 0 || idx >= optionCount) return;
+      if (idx < suggestions.length) {
+        setProject(suggestions[idx].name);
+      }
+      setShowSugg(false);
+      setSelectedIdx(-1);
+    };
+
+    const onProjKeyDown = (e) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { submit(); return; }
+      if (!showSugg || optionCount === 0) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIdx(i => (i + 1) % optionCount);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIdx(i => (i <= 0 ? optionCount - 1 : i - 1));
+      } else if (e.key === 'Enter') {
+        if (selectedIdx >= 0) { e.preventDefault(); pickOption(selectedIdx); }
+      } else if (e.key === 'Tab' && selectedIdx >= 0) {
+        pickOption(selectedIdx);
+      }
+    };
 
     const submit = () => {
       if (!text.trim()) return;
@@ -425,13 +456,6 @@ const WorklogCore = (() => {
             rows={3}
           />
           <div className={cn('dialog-row')}>
-            <div className={cn('typepick')}>
-              {['info', 'issue', 'milestone'].map(t => (
-                <button key={t} className={`${cn('typebtn')} ${type === t ? 'is-on' : ''}`} onClick={() => setType(t)}>
-                  <Glyph type={t} /> {TYPE_LABEL[t]}
-                </button>
-              ))}
-            </div>
             <div className={cn('projfield')}>
               <input
                 className={cn('projinput')}
@@ -440,22 +464,39 @@ const WorklogCore = (() => {
                 onChange={e => { setProject(e.target.value); setShowSugg(true); }}
                 onFocus={() => setShowSugg(true)}
                 onBlur={() => setTimeout(() => setShowSugg(false), 120)}
+                onKeyDown={onProjKeyDown}
               />
-              {showSugg && (suggestions.length > 0 || project) && (
+              {showSugg && optionCount > 0 && (
                 <div className={cn('sugg')}>
-                  {suggestions.map(pr => (
-                    <div key={pr.id} className={cn('sugg-row')} onMouseDown={() => { setProject(pr.name); setShowSugg(false); }}>
+                  {suggestions.map((pr, i) => (
+                    <div
+                      key={pr.id}
+                      className={`${cn('sugg-row')} ${selectedIdx === i ? 'is-selected' : ''}`}
+                      onMouseEnter={() => setSelectedIdx(i)}
+                      onMouseDown={() => { setProject(pr.name); setShowSugg(false); }}
+                    >
                       <span className={cn('sugg-dot')} style={{ background: pr.color }} />
                       {pr.name}
                     </div>
                   ))}
-                  {project && !projects.find(pr => pr.name.toLowerCase() === project.toLowerCase()) && (
-                    <div className={`${cn('sugg-row')} ${cn('sugg-new')}`} onMouseDown={() => setShowSugg(false)}>
+                  {showCreate && (
+                    <div
+                      className={`${cn('sugg-row')} ${cn('sugg-new')} ${selectedIdx === suggestions.length ? 'is-selected' : ''}`}
+                      onMouseEnter={() => setSelectedIdx(suggestions.length)}
+                      onMouseDown={() => setShowSugg(false)}
+                    >
                       Create "{project}"
                     </div>
                   )}
                 </div>
               )}
+            </div>
+            <div className={cn('typepick')}>
+              {['info', 'issue', 'milestone'].map(t => (
+                <button key={t} className={`${cn('typebtn')} ${type === t ? 'is-on' : ''}`} onClick={() => setType(t)}>
+                  <Glyph type={t} /> {TYPE_LABEL[t]}
+                </button>
+              ))}
             </div>
           </div>
           <div className={cn('dialog-actions')}>
