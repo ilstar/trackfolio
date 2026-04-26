@@ -1,5 +1,21 @@
 // Main app shell — tabs + tweaks bar + the active view
-const { useState } = React;
+const { useState, useEffect } = React;
+
+function usePersistedState(key, initial) {
+  const [value, setValue] = useState(() => {
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (raw === null) return initial;
+      return JSON.parse(raw);
+    } catch {
+      return initial;
+    }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(key, JSON.stringify(value)); } catch {}
+  }, [key, value]);
+  return [value, setValue];
+}
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -19,9 +35,9 @@ function Seg({ value, options, onChange }) {
 
 function App() {
   const [view, setView] = useState('columns');
-  const [scale, setScale] = useState('week');
-  const [density, setDensity] = useState('medium');
-  const [groupByProject, setGroupByProject] = useState(false);
+  const [scale, setScale] = usePersistedState('worklog.scale', 'week');
+  const [density, setDensity] = usePersistedState('worklog.density', 'medium');
+  const [groupByProject, setGroupByProject] = usePersistedState('worklog.groupByProject', false);
 
   const today = window.WorklogData.TODAY;
   const monthLabel = MONTH_NAMES[today.getMonth()] + ' ' + today.getFullYear();
