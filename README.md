@@ -1,6 +1,6 @@
 # trackfolio
 
-A small, single-file worklog viewer. Two views — a chronological feed and a project-by-day columns view — over the same data. No build step, no backend; React loads from a CDN and Babel transpiles JSX in the browser.
+A small, single-file worklog viewer. Two worklog views — a chronological feed and a project-by-day columns view — plus project management over the same data. No build step, no backend; React loads from a CDN and Babel transpiles JSX in the browser.
 
 **Live**: https://ilstar.github.io/trackfolio/
 
@@ -27,7 +27,7 @@ If your browser doesn't support FSA (Safari, Firefox), use **Import** / **Export
 ```json
 {
   "projects": [
-    { "id": "p1", "name": "Atlas Migration", "color": "oklch(0.62 0.14 250)" }
+    { "id": "p1", "name": "Atlas Migration", "color": "oklch(0.62 0.14 250)", "hidden": false }
   ],
   "entries": [
     { "id": "e1", "date": "2026-04-20", "type": "info", "project": "p1", "text": "..." }
@@ -38,6 +38,7 @@ If your browser doesn't support FSA (Safari, Firefox), use **Import** / **Export
 - `entries[].type` is one of `info`, `issue`, `milestone`.
 - `entries[].project` is a project `id`, or `null` for unaffiliated entries.
 - `entries[].date` is `YYYY-MM-DD`.
+- `projects[].hidden` is optional; hidden projects and their entries are omitted from the worklog views until unhidden.
 
 ## Files
 

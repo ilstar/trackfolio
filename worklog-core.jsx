@@ -17,7 +17,7 @@ const WorklogCore = (() => {
     return <svg width={size} height={size} viewBox="0 0 10 10"><polygon points="5,1 9,5 5,9 1,5" fill={c} /></svg>;
   }
 
-  function App({ p, scale, density, groupByProject, headerSubtitle, projects, entries, setProjects, setEntries }) {
+  function App({ p, scale, density, groupByProject, headerSubtitle, projects, allProjects, entries, setProjects, setEntries }) {
     const [filter, setFilter] = useState(null);
     const [dialog, setDialog] = useState(null); // null | {mode:'add', date} | {mode:'edit', entry}
     const [hovered, setHovered] = useState(null);
@@ -54,8 +54,14 @@ const WorklogCore = (() => {
 
     const resolveProject = (rawName) => {
       if (!rawName) return null;
-      const existing = projects.find(p => p.name.toLowerCase() === rawName.toLowerCase());
-      if (existing) return existing.id;
+      const searchProjects = Array.isArray(allProjects) ? allProjects : projects;
+      const existing = searchProjects.find(p => p.name.toLowerCase() === rawName.toLowerCase());
+      if (existing) {
+        if (existing.hidden) {
+          setProjects(ps => ps.map(p => p.id === existing.id ? { ...p, hidden: false } : p));
+        }
+        return existing.id;
+      }
       const newP = {
         id: 'p' + Date.now(),
         name: rawName,

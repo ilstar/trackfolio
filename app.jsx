@@ -48,6 +48,13 @@ function loadFromLS() {
   } catch { return null; }
 }
 
+function normalizeProjects(projects) {
+  return (Array.isArray(projects) ? projects : []).map(p => ({
+    ...p,
+    hidden: Boolean(p.hidden),
+  }));
+}
+
 async function writeToFile(handle, data) {
   const writable = await handle.createWritable();
   await writable.write(JSON.stringify(data, null, 2));
@@ -72,7 +79,7 @@ function usePersistedState(key, initial) {
 
 function useWorklogStore() {
   const initial = loadFromLS();
-  const [projects, setProjects] = useState(initial?.projects || window.WorklogData.PROJECTS);
+  const [projects, setProjects] = useState(() => normalizeProjects(initial?.projects || window.WorklogData.PROJECTS));
   const [entries, setEntries] = useState(initial?.entries || window.WorklogData.ENTRIES);
   const [columnOrder, setColumnOrder] = useState(initial?.columnOrder || null);
   const [fileHandle, setFileHandle] = useState(null);
@@ -86,7 +93,7 @@ function useWorklogStore() {
     if (text.trim()) {
       const data = JSON.parse(text);
       skipNextSave.current = true;
-      if (Array.isArray(data.projects)) setProjects(data.projects);
+      if (Array.isArray(data.projects)) setProjects(normalizeProjects(data.projects));
       if (Array.isArray(data.entries)) setEntries(data.entries);
       if (Array.isArray(data.columnOrder)) setColumnOrder(data.columnOrder);
     }
@@ -180,7 +187,7 @@ function useWorklogStore() {
       if (text.trim()) {
         const data = JSON.parse(text);
         skipNextSave.current = true;
-        if (Array.isArray(data.projects)) setProjects(data.projects);
+        if (Array.isArray(data.projects)) setProjects(normalizeProjects(data.projects));
         if (Array.isArray(data.entries)) setEntries(data.entries);
         if (Array.isArray(data.columnOrder)) setColumnOrder(data.columnOrder);
       }
@@ -215,7 +222,7 @@ function useWorklogStore() {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target.result);
-        if (Array.isArray(data.projects)) setProjects(data.projects);
+        if (Array.isArray(data.projects)) setProjects(normalizeProjects(data.projects));
         if (Array.isArray(data.entries)) setEntries(data.entries);
         if (Array.isArray(data.columnOrder)) setColumnOrder(data.columnOrder);
       } catch (err) {
@@ -246,6 +253,117 @@ function Seg({ value, options, onChange }) {
           onClick={() => onChange(opt.value)}
         >{opt.label}</button>
       ))}
+    </div>
+  );
+}
+
+function ProjectManager({ projects, entries, setProjects }) {
+  const [draftNames, setDraftNames] = useState(() => Object.fromEntries(projects.map(p => [p.id, p.name])));
+  const [filter, setFilter] = useState('visible');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    setDraftNames(prev => {
+      const next = {};
+      projects.forEach(p => { next[p.id] = prev[p.id] ?? p.name; });
+      return next;
+    });
+  }, [projects]);
+
+  const counts = React.useMemo(() => {
+    const m = new Map();
+    entries.forEach(e => {
+      if (e.project) m.set(e.project, (m.get(e.project) || 0) + 1);
+    });
+    return m;
+  }, [entries]);
+
+  const visibleCount = projects.filter(p => !p.hidden).length;
+  const hiddenCount = projects.length - visibleCount;
+  const shownProjects = projects.filter(p => filter === 'hidden' ? p.hidden : !p.hidden);
+
+  const commitRename = (projectId) => {
+    const nextName = (draftNames[projectId] || '').trim();
+    const current = projects.find(p => p.id === projectId);
+    if (!current) return;
+    if (!nextName) {
+      setDraftNames(names => ({ ...names, [projectId]: current.name }));
+      setError('Project names cannot be blank.');
+      return;
+    }
+    const duplicate = projects.some(p => p.id !== projectId && p.name.toLowerCase() === nextName.toLowerCase());
+    if (duplicate) {
+      setDraftNames(names => ({ ...names, [projectId]: current.name }));
+      setError('Another project already uses that name.');
+      return;
+    }
+    setError('');
+    if (nextName !== current.name) {
+      setProjects(ps => ps.map(p => p.id === projectId ? { ...p, name: nextName } : p));
+    }
+  };
+
+  const setHidden = (projectId, hidden) => {
+    setProjects(ps => ps.map(p => p.id === projectId ? { ...p, hidden } : p));
+    setError('');
+  };
+
+  return (
+    <div className="proj-root">
+      <header className="proj-header">
+        <div className="proj-title">
+          <h1>Projects</h1>
+          <div className="proj-sub">{visibleCount} visible · {hiddenCount} hidden</div>
+        </div>
+        <Seg
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: 'visible', label: 'Visible' },
+            { value: 'hidden', label: 'Hidden' },
+          ]}
+        />
+      </header>
+
+      {error && <div className="proj-error">{error}</div>}
+
+      <div className="proj-list">
+        {shownProjects.length === 0 ? (
+          <div className="proj-empty">
+            {filter === 'hidden' ? 'No hidden projects.' : 'No visible projects.'}
+          </div>
+        ) : shownProjects.map(project => (
+          <div
+            key={project.id}
+            className={`proj-row ${project.hidden ? 'is-hidden' : ''}`}
+            data-project-id={project.id}
+          >
+            <span className="proj-dot" style={{ background: project.color }} />
+            <input
+              className="proj-name-input"
+              value={draftNames[project.id] ?? project.name}
+              onChange={e => setDraftNames(names => ({ ...names, [project.id]: e.target.value }))}
+              onBlur={() => commitRename(project.id)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') e.currentTarget.blur();
+                if (e.key === 'Escape') {
+                  setDraftNames(names => ({ ...names, [project.id]: project.name }));
+                  e.currentTarget.blur();
+                }
+              }}
+              aria-label={`Rename ${project.name}`}
+            />
+            <span className="proj-count">{counts.get(project.id) || 0}</span>
+            <button
+              className="proj-action"
+              data-project-action={project.hidden ? 'unhide' : 'hide'}
+              onClick={() => setHidden(project.id, !project.hidden)}
+            >
+              {project.hidden ? 'Unhide' : 'Hide'}
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -310,13 +428,26 @@ function App() {
 
   const today = window.WorklogData.TODAY;
   const monthLabel = MONTH_NAMES[today.getMonth()] + ' ' + today.getFullYear();
+  const hiddenProjectIds = React.useMemo(
+    () => new Set(store.projects.filter(p => p.hidden).map(p => p.id)),
+    [store.projects]
+  );
+  const activeProjects = React.useMemo(
+    () => store.projects.filter(p => !p.hidden),
+    [store.projects]
+  );
+  const visibleEntries = React.useMemo(
+    () => store.entries.filter(e => !e.project || !hiddenProjectIds.has(e.project)),
+    [store.entries, hiddenProjectIds]
+  );
 
-  const totalEntries = store.entries.length;
-  const projectCount = store.projects.length + 1; // +1 for "No project"
+  const totalEntries = visibleEntries.length;
+  const projectCount = activeProjects.length + 1; // +1 for "No project"
 
   const tabs = [
     { value: 'columns', label: 'Project columns' },
     { value: 'feed', label: 'Daily feed' },
+    { value: 'projects', label: 'Projects' },
   ];
 
   return (
@@ -334,17 +465,19 @@ function App() {
       </div>
 
       <div className="tweaks-bar">
-        <div className="tweaks-group">
-          <span className="tweaks-label">Time scale</span>
-          <Seg
-            value={scale}
-            onChange={setScale}
-            options={[
-              { value: 'day', label: 'Day' },
-              { value: 'week', label: 'Week' },
-            ]}
-          />
-        </div>
+        {view !== 'projects' && (
+          <div className="tweaks-group">
+            <span className="tweaks-label">Time scale</span>
+            <Seg
+              value={scale}
+              onChange={setScale}
+              options={[
+                { value: 'day', label: 'Day' },
+                { value: 'week', label: 'Week' },
+              ]}
+            />
+          </div>
+        )}
         {view === 'feed' && (
           <label className="tweaks-toggle">
             <input
@@ -357,20 +490,27 @@ function App() {
         )}
         <span className="tweaks-spacer" />
         <DataControls store={store} />
-        <span className="tweaks-hint">press <b>/</b> or ⌘K to add</span>
+        {view !== 'projects' && <span className="tweaks-hint">press <b>/</b> or ⌘K to add</span>}
       </div>
 
       <div className={`views ${view === 'columns' ? 'views--full' : ''}`}>
         <div className="view-card">
-          {view === 'feed' ? (
+          {view === 'projects' ? (
+            <ProjectManager
+              projects={store.projects}
+              entries={store.entries}
+              setProjects={store.setProjects}
+            />
+          ) : view === 'feed' ? (
             <window.WorklogCore
               p="wlC"
               headerSubtitle={monthLabel + ' · ' + totalEntries + ' entries'}
               scale={scale}
               density="medium"
               groupByProject={groupByProject}
-              projects={store.projects}
-              entries={store.entries}
+              projects={activeProjects}
+              allProjects={store.projects}
+              entries={visibleEntries}
               setProjects={store.setProjects}
               setEntries={store.setEntries}
             />
@@ -379,8 +519,9 @@ function App() {
               headerSubtitle={monthLabel + ' · ' + projectCount + ' columns'}
               scale={scale}
               density="airy"
-              projects={store.projects}
-              entries={store.entries}
+              projects={activeProjects}
+              allProjects={store.projects}
+              entries={visibleEntries}
               setProjects={store.setProjects}
               setEntries={store.setEntries}
               columnOrder={store.columnOrder}
