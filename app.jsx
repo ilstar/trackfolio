@@ -370,51 +370,114 @@ function ProjectManager({ projects, entries, setProjects }) {
 
 function DataControls({ store }) {
   const fileInputRef = useRef(null);
-  const statusLabel =
-    store.fileStatus === 'saving' ? 'saving…' :
-    store.fileStatus === 'saved' ? 'saved' :
-    store.fileStatus === 'error' ? 'save failed' : '';
+  const menuRef = useRef(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (e) => {
+      if (!menuRef.current?.contains(e.target)) setMenuOpen(false);
+    };
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    window.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuOpen]);
+
+  const status = store.fileHandle
+    ? {
+        tone: store.fileStatus === 'error' ? 'error' : store.fileStatus === 'saving' ? 'saving' : 'connected',
+        label: store.fileStatus === 'error' ? 'Save failed' : store.fileStatus === 'saving' ? 'Saving' : 'Connected',
+        detail: store.fileHandle.name,
+      }
+    : store.pendingHandle
+      ? { tone: 'pending', label: 'Needs permission', detail: store.pendingHandle.name }
+      : { tone: 'local', label: 'Local only', detail: 'Browser storage' };
+
+  const runAction = (action) => {
+    setMenuOpen(false);
+    action();
+  };
 
   return (
-    <div className="data-controls">
-      {store.fileHandle ? (
-        <>
-          <span className="data-file" title={store.fileHandle.name}>{store.fileHandle.name}</span>
-          <span className={`data-status data-status--${store.fileStatus}`}>{statusLabel}</span>
-          <button className="data-btn" onClick={store.disconnect}>Disconnect</button>
-          <button className="data-btn" onClick={store.exportJson}>Export</button>
-        </>
-      ) : store.pendingHandle ? (
-        <>
-          <span className="data-file" title={store.pendingHandle.name}>{store.pendingHandle.name}</span>
-          <span className="data-status">needs permission</span>
-          <button className="data-btn data-btn--primary" onClick={store.reconnect}>Reconnect</button>
-          <button className="data-btn" onClick={store.forgetPending}>Forget</button>
-        </>
-      ) : (
-        <>
-          <span className="data-status">Local only</span>
-          {FSA_SUPPORTED && (
-            <>
-              <button className="data-btn" onClick={store.connectOpen}>Open file…</button>
-              <button className="data-btn" onClick={store.connectSave}>Save to file…</button>
-            </>
-          )}
-          <button className="data-btn" onClick={store.exportJson}>Export</button>
-          <button className="data-btn" onClick={() => fileInputRef.current?.click()}>Import</button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json,application/json"
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) store.importJson(f);
-              e.target.value = '';
-            }}
-          />
-        </>
+    <div className="data-controls" ref={menuRef}>
+      <span
+        className={`data-indicator data-indicator--${status.tone}`}
+        title={status.detail}
+      >
+        <span className="data-indicator-dot" />
+        <span className="data-indicator-label">{status.label}</span>
+        <span className="data-indicator-detail">{status.detail}</span>
+      </span>
+
+      <button
+        className="data-menu-btn"
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen(open => !open)}
+      >
+        File
+        <span className="data-menu-caret">▾</span>
+      </button>
+
+      {menuOpen && (
+        <div className="data-menu" role="menu">
+          <div className="data-menu-section">
+            <div className="data-menu-label">File</div>
+            {FSA_SUPPORTED && (
+              <>
+                <button role="menuitem" className="data-menu-item" onClick={() => runAction(store.connectOpen)}>
+                  Open file…
+                </button>
+                <button role="menuitem" className="data-menu-item" onClick={() => runAction(store.connectSave)}>
+                  Save to file…
+                </button>
+              </>
+            )}
+            {store.pendingHandle && (
+              <>
+                <button role="menuitem" className="data-menu-item data-menu-item--primary" onClick={() => runAction(store.reconnect)}>
+                  Reconnect file
+                </button>
+                <button role="menuitem" className="data-menu-item" onClick={() => runAction(store.forgetPending)}>
+                  Forget file
+                </button>
+              </>
+            )}
+            {store.fileHandle && (
+              <button role="menuitem" className="data-menu-item" onClick={() => runAction(store.disconnect)}>
+                Disconnect file
+              </button>
+            )}
+          </div>
+          <div className="data-menu-section">
+            <div className="data-menu-label">Backup</div>
+            <button role="menuitem" className="data-menu-item" onClick={() => runAction(store.exportJson)}>
+              Export JSON
+            </button>
+            <button role="menuitem" className="data-menu-item" onClick={() => runAction(() => fileInputRef.current?.click())}>
+              Import JSON…
+            </button>
+          </div>
+        </div>
       )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,application/json"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) store.importJson(f);
+          e.target.value = '';
+        }}
+      />
     </div>
   );
 }
@@ -488,9 +551,9 @@ function App() {
             Group by project
           </label>
         )}
+        {view !== 'projects' && <span className="tweaks-hint">press <b>/</b> or ⌘K to add</span>}
         <span className="tweaks-spacer" />
         <DataControls store={store} />
-        {view !== 'projects' && <span className="tweaks-hint">press <b>/</b> or ⌘K to add</span>}
       </div>
 
       <div className={`views ${view === 'columns' ? 'views--full' : ''}`}>
