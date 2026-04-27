@@ -189,9 +189,7 @@ body {
   flex-direction: column;
   gap: 32px;
   padding: 24px;
-  max-width: 1400px;
   width: 100%;
-  margin: 0 auto;
   box-sizing: border-box;
 }
 .view-card {
@@ -762,6 +760,8 @@ body {
   display: grid;
   background: var(--bg);
   position: relative;
+  overflow: auto;
+  max-height: calc(100vh - 200px);
 }
 
 .wlCol-corner {

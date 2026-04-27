@@ -59,7 +59,17 @@ const WorklogColumns = (() => {
       return dates.map(ds => ({ type: 'day', key: ds, date: ds }));
     }, [dates, scale]);
 
-    const columns = [...projects, { id: '__none', name: 'No project', color: '#c4c4c8' }];
+    const counts = useMemo(() => {
+      const m = new Map();
+      for (const e of entries) {
+        const k = e.project || '__none';
+        m.set(k, (m.get(k) || 0) + 1);
+      }
+      return m;
+    }, [entries]);
+
+    const columns = [...projects, { id: '__none', name: 'No project', color: '#c4c4c8' }]
+      .filter(p => (counts.get(p.id) || 0) > 0);
 
     const resolveProjectId = (rawName) => {
       if (!rawName) return null;
@@ -109,15 +119,13 @@ const WorklogColumns = (() => {
           <span><Glyph type="milestone" /> milestone</span>
         </div>
 
-        <div className="wlCol-grid" style={{ gridTemplateColumns: `84px repeat(${columns.length}, minmax(140px, 1fr))` }}>
+        <div className="wlCol-grid" style={{ gridTemplateColumns: `84px repeat(${columns.length}, minmax(180px, 1fr))` }}>
           <div className="wlCol-corner" />
           {columns.map(p => (
             <div key={p.id} className="wlCol-colhead" style={{ '--proj': p.color }}>
               <span className="wlCol-colhead-dot" />
               <span className="wlCol-colhead-name">{p.name}</span>
-              <span className="wlCol-colhead-count">
-                {entries.filter(e => (e.project || '__none') === p.id).length}
-              </span>
+              <span className="wlCol-colhead-count">{counts.get(p.id) || 0}</span>
             </div>
           ))}
 
