@@ -36,7 +36,6 @@ function Seg({ value, options, onChange }) {
 function App() {
   const [view, setView] = useState('columns');
   const [scale, setScale] = usePersistedState('worklog.scale', 'week');
-  const [density, setDensity] = usePersistedState('worklog.density', 'medium');
   const [groupByProject, setGroupByProject] = usePersistedState('worklog.groupByProject', false);
 
   const today = window.WorklogData.TODAY;
@@ -76,18 +75,6 @@ function App() {
             ]}
           />
         </div>
-        <div className="tweaks-group">
-          <span className="tweaks-label">Density</span>
-          <Seg
-            value={density}
-            onChange={setDensity}
-            options={[
-              { value: 'airy', label: 'Airy' },
-              { value: 'medium', label: 'Medium' },
-              { value: 'dense', label: 'Dense' },
-            ]}
-          />
-        </div>
         {view === 'feed' && (
           <label className="tweaks-toggle">
             <input
@@ -109,14 +96,14 @@ function App() {
               p="wlC"
               headerSubtitle={monthLabel + ' · ' + totalEntries + ' entries'}
               scale={scale}
-              density={density}
+              density="medium"
               groupByProject={groupByProject}
             />
           ) : (
             <window.WorklogColumns
               headerSubtitle={monthLabel + ' · ' + projectCount + ' columns'}
               scale={scale}
-              density={density}
+              density="airy"
             />
           )}
         </div>
