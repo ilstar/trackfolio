@@ -1,5 +1,58 @@
-// Main app shell — tabs + tweaks bar + the active view
-const { useState, useEffect } = React;
+// Main app shell — store + tabs + tweaks bar + the active view
+const { useState, useEffect, useRef } = React;
+
+const FSA_SUPPORTED = typeof window !== 'undefined' && 'showSaveFilePicker' in window;
+const STORE_KEY = 'worklog.data';
+const HANDLE_KEY = 'handle';
+
+// --- tiny IndexedDB key-value store for the file handle ---
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('worklog', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('kv');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbGet(key) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const req = db.transaction('kv').objectStore('kv').get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbSet(key, value) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(value, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function idbDel(key) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').delete(key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+function loadFromLS() {
+  try {
+    const raw = window.localStorage.getItem(STORE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+async function writeToFile(handle, data) {
+  const writable = await handle.createWritable();
+  await writable.write(JSON.stringify(data, null, 2));
+  await writable.close();
+}
 
 function usePersistedState(key, initial) {
   const [value, setValue] = useState(() => {
@@ -15,6 +68,165 @@ function usePersistedState(key, initial) {
     try { window.localStorage.setItem(key, JSON.stringify(value)); } catch {}
   }, [key, value]);
   return [value, setValue];
+}
+
+function useWorklogStore() {
+  const initial = loadFromLS();
+  const [projects, setProjects] = useState(initial?.projects || window.WorklogData.PROJECTS);
+  const [entries, setEntries] = useState(initial?.entries || window.WorklogData.ENTRIES);
+  const [fileHandle, setFileHandle] = useState(null);
+  const [pendingHandle, setPendingHandle] = useState(null);
+  const [fileStatus, setFileStatus] = useState('idle');
+  const skipNextSave = useRef(false);
+
+  const adoptHandleData = async (handle) => {
+    const file = await handle.getFile();
+    const text = await file.text();
+    if (text.trim()) {
+      const data = JSON.parse(text);
+      skipNextSave.current = true;
+      if (Array.isArray(data.projects)) setProjects(data.projects);
+      if (Array.isArray(data.entries)) setEntries(data.entries);
+    }
+  };
+
+  // Restore the file handle from IndexedDB on first load (Chrome+ only)
+  useEffect(() => {
+    if (!FSA_SUPPORTED) return;
+    (async () => {
+      try {
+        const handle = await idbGet(HANDLE_KEY);
+        if (!handle) return;
+        const perm = await handle.queryPermission({ mode: 'readwrite' });
+        if (perm === 'granted') {
+          await adoptHandleData(handle);
+          setFileHandle(handle);
+          setFileStatus('saved');
+        } else {
+          // Chrome drops file permission across reloads — surface a
+          // one-click reconnect since requestPermission needs a gesture.
+          setPendingHandle(handle);
+        }
+      } catch (err) {
+        console.warn('Could not restore file handle:', err);
+      }
+    })();
+  }, []);
+
+  const reconnect = async () => {
+    if (!pendingHandle) return;
+    try {
+      const granted = await pendingHandle.requestPermission({ mode: 'readwrite' });
+      if (granted !== 'granted') return;
+      await adoptHandleData(pendingHandle);
+      setFileHandle(pendingHandle);
+      setPendingHandle(null);
+      setFileStatus('saved');
+    } catch (err) {
+      console.warn(err);
+    }
+  };
+
+  const forgetPending = async () => {
+    setPendingHandle(null);
+    try { await idbDel(HANDLE_KEY); } catch {}
+  };
+
+  // Auto-save: localStorage always, file too if connected
+  useEffect(() => {
+    const data = { projects, entries };
+    try { window.localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch {}
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return;
+    }
+    if (fileHandle) {
+      setFileStatus('saving');
+      writeToFile(fileHandle, data)
+        .then(() => setFileStatus('saved'))
+        .catch((err) => { console.warn('save failed', err); setFileStatus('error'); });
+    }
+  }, [projects, entries, fileHandle]);
+
+  const connectSave = async () => {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: 'worklog.json',
+        types: [{ description: 'Worklog data', accept: { 'application/json': ['.json'] } }],
+      });
+      await writeToFile(handle, { projects, entries });
+      try { await idbSet(HANDLE_KEY, handle); } catch (e) { console.warn(e); }
+      setFileHandle(handle);
+      setFileStatus('saved');
+    } catch (err) {
+      if (err?.name !== 'AbortError') console.warn(err);
+    }
+  };
+
+  const connectOpen = async () => {
+    try {
+      const [handle] = await window.showOpenFilePicker({
+        types: [{ description: 'Worklog data', accept: { 'application/json': ['.json'] } }],
+      });
+      const perm = await handle.queryPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') {
+        const granted = await handle.requestPermission({ mode: 'readwrite' });
+        if (granted !== 'granted') return;
+      }
+      const file = await handle.getFile();
+      const text = await file.text();
+      if (text.trim()) {
+        const data = JSON.parse(text);
+        skipNextSave.current = true;
+        if (Array.isArray(data.projects)) setProjects(data.projects);
+        if (Array.isArray(data.entries)) setEntries(data.entries);
+      }
+      try { await idbSet(HANDLE_KEY, handle); } catch (e) { console.warn(e); }
+      setFileHandle(handle);
+      setFileStatus('saved');
+    } catch (err) {
+      if (err?.name !== 'AbortError') console.warn(err);
+    }
+  };
+
+  const disconnect = async () => {
+    setFileHandle(null);
+    setFileStatus('idle');
+    try { await idbDel(HANDLE_KEY); } catch {}
+  };
+
+  const exportJson = () => {
+    const blob = new Blob([JSON.stringify({ projects, entries }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'worklog.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const importJson = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (Array.isArray(data.projects)) setProjects(data.projects);
+        if (Array.isArray(data.entries)) setEntries(data.entries);
+      } catch (err) {
+        alert('Could not parse JSON: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  return {
+    projects, setProjects, entries, setEntries,
+    fileHandle, pendingHandle, fileStatus,
+    connectSave, connectOpen, disconnect, reconnect, forgetPending,
+    exportJson, importJson,
+  };
 }
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -33,16 +245,69 @@ function Seg({ value, options, onChange }) {
   );
 }
 
+function DataControls({ store }) {
+  const fileInputRef = useRef(null);
+  const statusLabel =
+    store.fileStatus === 'saving' ? 'saving…' :
+    store.fileStatus === 'saved' ? 'saved' :
+    store.fileStatus === 'error' ? 'save failed' : '';
+
+  return (
+    <div className="data-controls">
+      {store.fileHandle ? (
+        <>
+          <span className="data-file" title={store.fileHandle.name}>{store.fileHandle.name}</span>
+          <span className={`data-status data-status--${store.fileStatus}`}>{statusLabel}</span>
+          <button className="data-btn" onClick={store.disconnect}>Disconnect</button>
+          <button className="data-btn" onClick={store.exportJson}>Export</button>
+        </>
+      ) : store.pendingHandle ? (
+        <>
+          <span className="data-file" title={store.pendingHandle.name}>{store.pendingHandle.name}</span>
+          <span className="data-status">needs permission</span>
+          <button className="data-btn data-btn--primary" onClick={store.reconnect}>Reconnect</button>
+          <button className="data-btn" onClick={store.forgetPending}>Forget</button>
+        </>
+      ) : (
+        <>
+          <span className="data-status">Local only</span>
+          {FSA_SUPPORTED && (
+            <>
+              <button className="data-btn" onClick={store.connectOpen}>Open file…</button>
+              <button className="data-btn" onClick={store.connectSave}>Save to file…</button>
+            </>
+          )}
+          <button className="data-btn" onClick={store.exportJson}>Export</button>
+          <button className="data-btn" onClick={() => fileInputRef.current?.click()}>Import</button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,application/json"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) store.importJson(f);
+              e.target.value = '';
+            }}
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
 function App() {
   const [view, setView] = useState('columns');
   const [scale, setScale] = usePersistedState('worklog.scale', 'week');
   const [groupByProject, setGroupByProject] = usePersistedState('worklog.groupByProject', false);
 
+  const store = useWorklogStore();
+
   const today = window.WorklogData.TODAY;
   const monthLabel = MONTH_NAMES[today.getMonth()] + ' ' + today.getFullYear();
 
-  const totalEntries = window.WorklogData.ENTRIES.length;
-  const projectCount = window.WorklogData.PROJECTS.length + 1; // +1 for "No project"
+  const totalEntries = store.entries.length;
+  const projectCount = store.projects.length + 1; // +1 for "No project"
 
   const tabs = [
     { value: 'columns', label: 'Project columns' },
@@ -86,6 +351,7 @@ function App() {
           </label>
         )}
         <span className="tweaks-spacer" />
+        <DataControls store={store} />
         <span className="tweaks-hint">press <b>/</b> or ⌘K to add</span>
       </div>
 
@@ -98,12 +364,20 @@ function App() {
               scale={scale}
               density="medium"
               groupByProject={groupByProject}
+              projects={store.projects}
+              entries={store.entries}
+              setProjects={store.setProjects}
+              setEntries={store.setEntries}
             />
           ) : (
             <window.WorklogColumns
               headerSubtitle={monthLabel + ' · ' + projectCount + ' columns'}
               scale={scale}
               density="airy"
+              projects={store.projects}
+              entries={store.entries}
+              setProjects={store.setProjects}
+              setEntries={store.setEntries}
             />
           )}
         </div>

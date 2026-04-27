@@ -2,7 +2,7 @@
 const WorklogColumns = (() => {
   const { useState, useMemo, useRef, useEffect } = React;
   const U = window.WorklogUtils;
-  const { PROJECTS: SEED_PROJECTS, ENTRIES: SEED_ENTRIES, TODAY } = window.WorklogData;
+  const { TODAY } = window.WorklogData;
 
   const TYPE_LABEL = { info: 'note', issue: 'issue', milestone: 'milestone' };
 
@@ -13,9 +13,7 @@ const WorklogColumns = (() => {
     return <svg width={size} height={size} viewBox="0 0 10 10"><polygon points="5,1 9,5 5,9 1,5" fill={c} /></svg>;
   }
 
-  function App({ scale, density, headerSubtitle }) {
-    const [projects, setProjects] = useState(SEED_PROJECTS);
-    const [entries, setEntries] = useState(SEED_ENTRIES);
+  function App({ scale, density, headerSubtitle, projects, entries, setProjects, setEntries }) {
     const [dialog, setDialog] = useState(null); // null | {mode:'add', date, projectId} | {mode:'edit', entry}
     const [hovered, setHovered] = useState(null);
     const [hoveredCol, setHoveredCol] = useState(null);
