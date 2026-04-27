@@ -355,7 +355,7 @@ function App() {
         <span className="tweaks-hint">press <b>/</b> or ⌘K to add</span>
       </div>
 
-      <div className="views">
+      <div className={`views ${view === 'columns' ? 'views--full' : ''}`}>
         <div className="view-card">
           {view === 'feed' ? (
             <window.WorklogCore
