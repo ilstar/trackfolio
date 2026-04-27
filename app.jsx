@@ -446,7 +446,7 @@ function App() {
 
   const tabs = [
     { value: 'columns', label: 'Project columns' },
-    { value: 'feed', label: 'Daily feed' },
+    { value: 'feed', label: 'Feed' },
     { value: 'projects', label: 'Projects' },
   ];
 

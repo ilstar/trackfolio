@@ -358,7 +358,7 @@ body {
   --ink-4: #c4c4c8;
   --rule: #ededeb;
   --rule-strong: #dadcd8;
-  --accent: oklch(0.55 0.16 250);
+  --accent: oklch(0.48 0.08 185);
   font-family: 'Inter', -apple-system, system-ui, sans-serif;
   color: var(--ink-1);
   background: var(--bg);
@@ -376,7 +376,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 28px;
+  gap: 24px;
+  margin-bottom: 26px;
 }
 .wlC-title h1 {
   font-weight: 500;
@@ -418,6 +419,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  max-width: 1080px;
   margin-bottom: 14px;
 }
 .wlC-chip {
@@ -449,18 +451,19 @@ body {
   display: flex; gap: 16px;
   font-size: 11.5px;
   color: var(--ink-3);
-  margin-bottom: 28px;
+  margin-bottom: 26px;
 }
 .wlC-legend span {
   display: inline-flex; align-items: center; gap: 6px;
 }
 
 .wlC-feed {
-  max-width: 760px;
+  width: 100%;
+  max-width: 1120px;
 }
 
 .wlC-month {
-  margin: 32px 0 14px;
+  margin: 32px 0 8px;
   display: flex;
   align-items: baseline;
   gap: 10px;
@@ -475,7 +478,12 @@ body {
   font-size: 12px;
   color: var(--ink-3);
 }
-.wlC-month-rule { display: none; }
+.wlC-month-rule {
+  display: block;
+  height: 1px;
+  flex: 1;
+  background: var(--rule);
+}
 
 .wlC-gap {
   height: 8px;
@@ -492,53 +500,29 @@ body {
 
 .wlC-day {
   display: grid;
-  grid-template-columns: 80px 1fr;
-  gap: 24px;
-  padding: var(--day-pad) 0;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 18px;
+  padding: calc(var(--day-pad) + 2px) 0;
   position: relative;
 }
 .wlC-day + .wlC-day { border-top: 1px solid var(--rule); }
 .wlC-day.is-monday {
-  position: relative;
+  border-top: 1px solid var(--rule-strong);
+  margin-top: 8px;
+  padding-top: calc(var(--day-pad) + 12px);
 }
-.wlC-day.is-monday::before {
-  content: 'WEEK';
-  position: absolute;
-  left: -52px;
-  top: var(--day-pad);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: var(--ink-4);
-  font-family: 'JetBrains Mono', monospace;
-}
-.wlC-day.is-monday::after {
-  content: '';
-  position: absolute;
-  left: -8px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--accent);
-  border-radius: 1px;
-  opacity: 0.35;
-}
-.wlC-day.is-monday + .wlC-day { border-top-color: transparent; }
-.wlC-day.is-monday {
-  border-top: 1px solid var(--rule-strong) !important;
-  margin-top: 4px;
-  padding-top: calc(var(--day-pad) + 4px);
-}
+.wlC-day.is-monday::before,
+.wlC-day.is-monday::after { display: none; }
 .wlC-day.is-empty { opacity: 0.6; }
 .wlC-day.is-today .wlC-day-num {
   color: var(--accent);
   font-weight: 600;
 }
 .wlC-day.is-today .wlC-day-rel {
-  background: var(--accent);
-  color: var(--bg);
-  padding: 1px 6px;
-  border-radius: 4px;
+  background: color-mix(in oklch, var(--accent) 14%, var(--bg));
+  color: var(--accent);
+  padding: 2px 7px;
+  border-radius: 999px;
   font-weight: 500;
 }
 
@@ -549,7 +533,7 @@ body {
   padding-top: 1px;
 }
 .wlC-day-num {
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.1;
   font-weight: 500;
   font-feature-settings: 'tnum';
@@ -570,10 +554,11 @@ body {
 .wlC-day.is-weekend .wlC-day-dow { color: var(--ink-4); }
 
 .wlC-day-body {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   gap: 8px;
   min-height: 22px;
+  align-content: start;
 }
 .wlC-day-blank {
   font-size: 12.5px;
@@ -588,13 +573,17 @@ body {
   display: grid;
   grid-template-columns: 14px 1fr;
   gap: 10px;
-  align-items: baseline;
-  padding: 5px 8px;
-  margin-left: -8px;
-  border-radius: 6px;
-  transition: background 0.15s;
+  align-items: start;
+  min-height: 30px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  transition: background 0.15s, border-color 0.15s;
 }
-.wlC-entry.is-hovered { background: var(--bg-2); }
+.wlC-entry.is-hovered {
+  background: var(--bg-2);
+  border-color: var(--rule);
+}
 .wlC-entry-glyph {
   display: flex;
   align-items: center;
@@ -604,6 +593,7 @@ body {
 .wlC-entry-text {
   font-size: 14px;
   color: var(--ink-1);
+  min-width: 0;
 }
 .wlC-entry.t-issue .wlC-entry-text {
   color: oklch(0.45 0.16 30);
@@ -636,9 +626,10 @@ body {
 
 .wlC-week-line {
   display: grid;
-  grid-template-columns: 48px 1fr;
-  gap: 8px;
-  align-items: baseline;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  min-width: 0;
 }
 .wlC-week-line-date {
   font-size: 11px;
@@ -647,10 +638,13 @@ body {
   font-family: 'JetBrains Mono', monospace;
   letter-spacing: 0.02em;
   text-align: right;
-  padding-top: 6px;
+  padding-top: 8px;
 }
 
-.wlC-pgroup { margin-bottom: 4px; }
+.wlC-pgroup {
+  min-width: 0;
+  margin-bottom: 4px;
+}
 .wlC-pgroup-head {
   display: inline-flex;
   align-items: center;
