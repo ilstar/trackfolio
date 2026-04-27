@@ -13,10 +13,12 @@ const WorklogColumns = (() => {
     return <svg width={size} height={size} viewBox="0 0 10 10"><polygon points="5,1 9,5 5,9 1,5" fill={c} /></svg>;
   }
 
-  function App({ scale, density, headerSubtitle, projects, entries, setProjects, setEntries }) {
+  function App({ scale, density, headerSubtitle, projects, entries, setProjects, setEntries, columnOrder, setColumnOrder }) {
     const [dialog, setDialog] = useState(null); // null | {mode:'add', date, projectId} | {mode:'edit', entry}
     const [hovered, setHovered] = useState(null);
     const [hoveredCol, setHoveredCol] = useState(null);
+    const [dragId, setDragId] = useState(null);
+    const [dragOverId, setDragOverId] = useState(null);
 
     useEffect(() => {
       const onKey = (e) => {
@@ -68,8 +70,22 @@ const WorklogColumns = (() => {
       return m;
     }, [entries]);
 
-    const columns = [...projects, { id: '__none', name: 'No project', color: '#c4c4c8' }]
-      .filter(p => (counts.get(p.id) || 0) > 0);
+    const columns = useMemo(() => {
+      const byId = new Map(projects.map(p => [p.id, p]));
+      const noneCol = { id: '__none', name: 'No project', color: '#c4c4c8' };
+      byId.set('__none', noneCol);
+      const order = Array.isArray(columnOrder) && columnOrder.length
+        ? columnOrder.filter(id => byId.has(id))
+        : [];
+      const seen = new Set(order);
+      for (const p of projects) if (!seen.has(p.id)) order.push(p.id);
+      if (!seen.has('__none')) order.push('__none');
+      return order.map(id => byId.get(id)).filter(p => (counts.get(p.id) || 0) > 0);
+    }, [projects, columnOrder, counts]);
+
+    const writeOrder = (nextOrder) => {
+      if (typeof setColumnOrder === 'function') setColumnOrder(nextOrder);
+    };
 
     const resolveProjectId = (rawName) => {
       if (!rawName) return null;
@@ -99,6 +115,37 @@ const WorklogColumns = (() => {
       setDialog(null);
     };
 
+    const onColDragStart = (e, id) => {
+      setDragId(id);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', id);
+    };
+    const onColDragOver = (e, id) => {
+      if (!dragId || id === dragId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (dragOverId !== id) setDragOverId(id);
+    };
+    const onColDragLeave = (id) => {
+      if (dragOverId === id) setDragOverId(null);
+    };
+    const onColDrop = (e, targetId) => {
+      e.preventDefault();
+      const from = dragId;
+      setDragId(null);
+      setDragOverId(null);
+      if (!from || from === targetId) return;
+      const currentIds = columns.map(c => c.id);
+      const fromIdx = currentIds.indexOf(from);
+      const toIdx = currentIds.indexOf(targetId);
+      if (fromIdx < 0 || toIdx < 0) return;
+      const next = [...currentIds];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      writeOrder(next);
+    };
+    const onColDragEnd = () => { setDragId(null); setDragOverId(null); };
+
     return (
       <div className="wlCol-root" style={{ '--day-px': dayPx + 'px' }}>
         <header className="wlCol-header">
@@ -121,13 +168,30 @@ const WorklogColumns = (() => {
 
         <div className="wlCol-grid" style={{ gridTemplateColumns: `84px repeat(${columns.length}, minmax(180px, 1fr))` }}>
           <div className="wlCol-corner" />
-          {columns.map(p => (
-            <div key={p.id} className="wlCol-colhead" style={{ '--proj': p.color }}>
-              <span className="wlCol-colhead-dot" />
-              <span className="wlCol-colhead-name">{p.name}</span>
-              <span className="wlCol-colhead-count">{counts.get(p.id) || 0}</span>
-            </div>
-          ))}
+          {columns.map(p => {
+            const cls = [
+              'wlCol-colhead is-draggable',
+              dragId === p.id ? 'is-dragging' : '',
+              dragOverId === p.id ? 'is-drop-target' : '',
+            ].filter(Boolean).join(' ');
+            return (
+              <div
+                key={p.id}
+                className={cls}
+                style={{ '--proj': p.color }}
+                draggable
+                onDragStart={(e) => onColDragStart(e, p.id)}
+                onDragOver={(e) => onColDragOver(e, p.id)}
+                onDragLeave={() => onColDragLeave(p.id)}
+                onDrop={(e) => onColDrop(e, p.id)}
+                onDragEnd={onColDragEnd}
+              >
+                <span className="wlCol-colhead-dot" />
+                <span className="wlCol-colhead-name">{p.name}</span>
+                <span className="wlCol-colhead-count">{counts.get(p.id) || 0}</span>
+              </div>
+            );
+          })}
 
           {(() => {
             const out = [];

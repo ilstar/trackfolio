@@ -74,6 +74,7 @@ function useWorklogStore() {
   const initial = loadFromLS();
   const [projects, setProjects] = useState(initial?.projects || window.WorklogData.PROJECTS);
   const [entries, setEntries] = useState(initial?.entries || window.WorklogData.ENTRIES);
+  const [columnOrder, setColumnOrder] = useState(initial?.columnOrder || null);
   const [fileHandle, setFileHandle] = useState(null);
   const [pendingHandle, setPendingHandle] = useState(null);
   const [fileStatus, setFileStatus] = useState('idle');
@@ -87,6 +88,7 @@ function useWorklogStore() {
       skipNextSave.current = true;
       if (Array.isArray(data.projects)) setProjects(data.projects);
       if (Array.isArray(data.entries)) setEntries(data.entries);
+      if (Array.isArray(data.columnOrder)) setColumnOrder(data.columnOrder);
     }
   };
 
@@ -134,7 +136,7 @@ function useWorklogStore() {
 
   // Auto-save: localStorage always, file too if connected
   useEffect(() => {
-    const data = { projects, entries };
+    const data = { projects, entries, columnOrder };
     try { window.localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch {}
     if (skipNextSave.current) {
       skipNextSave.current = false;
@@ -146,7 +148,7 @@ function useWorklogStore() {
         .then(() => setFileStatus('saved'))
         .catch((err) => { console.warn('save failed', err); setFileStatus('error'); });
     }
-  }, [projects, entries, fileHandle]);
+  }, [projects, entries, columnOrder, fileHandle]);
 
   const connectSave = async () => {
     try {
@@ -154,7 +156,7 @@ function useWorklogStore() {
         suggestedName: 'worklog.json',
         types: [{ description: 'Worklog data', accept: { 'application/json': ['.json'] } }],
       });
-      await writeToFile(handle, { projects, entries });
+      await writeToFile(handle, { projects, entries, columnOrder });
       try { await idbSet(HANDLE_KEY, handle); } catch (e) { console.warn(e); }
       setFileHandle(handle);
       setFileStatus('saved');
@@ -180,6 +182,7 @@ function useWorklogStore() {
         skipNextSave.current = true;
         if (Array.isArray(data.projects)) setProjects(data.projects);
         if (Array.isArray(data.entries)) setEntries(data.entries);
+        if (Array.isArray(data.columnOrder)) setColumnOrder(data.columnOrder);
       }
       try { await idbSet(HANDLE_KEY, handle); } catch (e) { console.warn(e); }
       setFileHandle(handle);
@@ -196,7 +199,7 @@ function useWorklogStore() {
   };
 
   const exportJson = () => {
-    const blob = new Blob([JSON.stringify({ projects, entries }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ projects, entries, columnOrder }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -214,6 +217,7 @@ function useWorklogStore() {
         const data = JSON.parse(e.target.result);
         if (Array.isArray(data.projects)) setProjects(data.projects);
         if (Array.isArray(data.entries)) setEntries(data.entries);
+        if (Array.isArray(data.columnOrder)) setColumnOrder(data.columnOrder);
       } catch (err) {
         alert('Could not parse JSON: ' + err.message);
       }
@@ -223,6 +227,7 @@ function useWorklogStore() {
 
   return {
     projects, setProjects, entries, setEntries,
+    columnOrder, setColumnOrder,
     fileHandle, pendingHandle, fileStatus,
     connectSave, connectOpen, disconnect, reconnect, forgetPending,
     exportJson, importJson,
@@ -378,6 +383,8 @@ function App() {
               entries={store.entries}
               setProjects={store.setProjects}
               setEntries={store.setEntries}
+              columnOrder={store.columnOrder}
+              setColumnOrder={store.setColumnOrder}
             />
           )}
         </div>
