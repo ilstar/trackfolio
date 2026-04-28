@@ -1157,17 +1157,8 @@ body {
 .wlCol-axis.is-month-start {
   border-top: 1px solid var(--rule);
 }
-.wlCol-axis.is-monday:not(.is-month-start) {
-  border-top: 1px solid var(--rule);
-}
-.wlCol-axis.is-monday::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 2px;
-  background: var(--accent);
-  opacity: 0.4;
-  display: block;
+.wlCol-axis.is-monday:not(.is-week) {
+  border-bottom: 1px solid var(--rule);
 }
 .wlCol-axis-date {
   display: flex;
@@ -1238,8 +1229,8 @@ body {
 .wlCol-cell.is-month-start {
   border-top: 1px solid var(--rule);
 }
-.wlCol-cell.is-monday:not(.is-month-start) {
-  border-top: 1px solid var(--rule);
+.wlCol-cell.is-monday:not(.is-week) {
+  border-bottom: 1px solid var(--rule);
 }
 .wlCol-cell.is-today {
   background: oklch(0.97 0.025 250);

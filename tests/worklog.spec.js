@@ -40,6 +40,45 @@ test('keeps timeline width compact by default and persists full-screen preferenc
   await expect(page.locator('.views')).toHaveClass(/views--full/);
 });
 
+test('keeps the Monday divider below day rows with no accent stripe', async ({ page }) => {
+  await page.getByRole('button', { name: 'Day' }).click();
+
+  const mondayAxis = page.locator('.wlCol-axis.is-monday:not(.is-week):not(.is-month-start)').first();
+  await expect(mondayAxis).toBeVisible();
+
+  const mondayStyles = await mondayAxis.evaluate(el => {
+    const before = window.getComputedStyle(el, '::before');
+    const axis = window.getComputedStyle(el);
+    return {
+      beforeDisplay: before.display,
+      beforeContent: before.content,
+      borderTopWidth: axis.borderTopWidth,
+      borderBottomWidth: axis.borderBottomWidth,
+    };
+  });
+
+  expect(mondayStyles.beforeDisplay).toBe('none');
+  expect(mondayStyles.beforeContent).toBe('none');
+  expect(mondayStyles.borderTopWidth).toBe('0px');
+  expect(mondayStyles.borderBottomWidth).toBe('1px');
+
+  await page.getByRole('button', { name: 'Week' }).click();
+
+  const weekAxis = page.locator('.wlCol-axis.is-week.is-monday').first();
+  await expect(weekAxis).toBeVisible();
+
+  const weekStyles = await weekAxis.evaluate(el => {
+    const before = window.getComputedStyle(el, '::before');
+    return {
+      beforeDisplay: before.display,
+      beforeContent: before.content,
+    };
+  });
+
+  expect(weekStyles.beforeDisplay).toBe('none');
+  expect(weekStyles.beforeContent).toBe('none');
+});
+
 test('adds a new entry from the columns view', async ({ page }) => {
   await page.getByRole('button', { name: /New entry/ }).click();
   await expect(page.locator('.wlCol-dialog').getByText('New entry', { exact: true })).toBeVisible();
