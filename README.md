@@ -25,7 +25,7 @@ npm test
 
 ## Data
 
-The app starts with sample data from `data.js`. Your own data lives in two places:
+The app starts with sample data from `src/data.js`. Your own data lives in two places:
 
 - **Browser localStorage** — autosaved on every change. Survives reloads.
 - **A JSON file on disk** — opt-in via the **Connect** button (uses the File System Access API on Chromium browsers). Once connected, every change is written through to the file.
@@ -53,12 +53,13 @@ If your browser doesn't support FSA (Safari, Firefox), use **Import** / **Export
 ## Files
 
 - `index.html` — entry point; pulls React + Babel from unpkg.
-- `app.jsx` — top-level shell, persistence, import/export, file connect.
-- `worklog-core.jsx` — the feed view.
-- `worklog-columns.jsx` — the project-columns view.
-- `utils.js` — date helpers and small utilities.
+- `src/app.jsx` — top-level shell, persistence, import/export, file connect.
+- `src/worklog-shared.jsx` — shared dialog and view helpers.
+- `src/worklog-core.jsx` — the feed view.
+- `src/worklog-columns.jsx` — the project-columns view.
+- `src/utils.js` — date helpers and small utilities.
 - `styles.css` — all styling.
-- `data.js` — sample data used on first run.
+- `src/data.js` — sample data used on first run.
 
 ## Deploying
 
