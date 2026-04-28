@@ -1,6 +1,9 @@
 // Main app shell — store + tabs + tweaks bar + the active view
 const { useState, useEffect, useRef } = React;
 
+const APP_NAME = 'Trackfolio';
+const DATA_FILENAME = 'trackfolio.json';
+const DATA_FILE_DESCRIPTION = 'Trackfolio data';
 const FSA_SUPPORTED = typeof window !== 'undefined' && 'showSaveFilePicker' in window;
 const STORE_KEY = 'worklog.data';
 const HANDLE_KEY = 'handle';
@@ -160,8 +163,8 @@ function useWorklogStore() {
   const connectSave = async () => {
     try {
       const handle = await window.showSaveFilePicker({
-        suggestedName: 'worklog.json',
-        types: [{ description: 'Worklog data', accept: { 'application/json': ['.json'] } }],
+        suggestedName: DATA_FILENAME,
+        types: [{ description: DATA_FILE_DESCRIPTION, accept: { 'application/json': ['.json'] } }],
       });
       await writeToFile(handle, { projects, entries, columnOrder });
       try { await idbSet(HANDLE_KEY, handle); } catch (e) { console.warn(e); }
@@ -175,7 +178,7 @@ function useWorklogStore() {
   const connectOpen = async () => {
     try {
       const [handle] = await window.showOpenFilePicker({
-        types: [{ description: 'Worklog data', accept: { 'application/json': ['.json'] } }],
+        types: [{ description: DATA_FILE_DESCRIPTION, accept: { 'application/json': ['.json'] } }],
       });
       const perm = await handle.queryPermission({ mode: 'readwrite' });
       if (perm !== 'granted') {
@@ -210,7 +213,7 @@ function useWorklogStore() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'worklog.json';
+    a.download = DATA_FILENAME;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -267,8 +270,8 @@ function ShortcutHelp({ onClose }) {
     {
       label: 'Navigate',
       items: [
-        { keys: ['1'], action: 'Project columns' },
-        { keys: ['2'], action: 'Feed' },
+        { keys: ['1'], action: 'Timeline' },
+        { keys: ['2'], action: 'Activity' },
         { keys: ['3'], action: 'Projects' },
       ],
     },
@@ -582,8 +585,8 @@ function App() {
   const projectCount = activeProjects.length + 1; // +1 for "No project"
 
   const tabs = [
-    { value: 'columns', label: 'Project columns' },
-    { value: 'feed', label: 'Feed' },
+    { value: 'columns', label: 'Timeline' },
+    { value: 'feed', label: 'Activity' },
     { value: 'projects', label: 'Projects' },
   ];
 
@@ -676,6 +679,7 @@ function App() {
           ) : view === 'feed' ? (
             <window.WorklogCore
               p="wlC"
+              title={APP_NAME}
               headerSubtitle={monthLabel + ' · ' + totalEntries + ' entries'}
               scale={scale}
               density="medium"
@@ -688,7 +692,8 @@ function App() {
             />
           ) : (
             <window.WorklogColumns
-              headerSubtitle={monthLabel + ' · ' + projectCount + ' columns'}
+              title={APP_NAME}
+              headerSubtitle={monthLabel + ' · ' + projectCount + ' lanes'}
               scale={scale}
               density="airy"
               projects={activeProjects}

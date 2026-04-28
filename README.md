@@ -1,6 +1,6 @@
 # trackfolio
 
-A small, single-file worklog viewer. Two worklog views — a chronological feed and a project-by-day columns view — plus project management over the same data. No build step, no backend; React loads from a CDN and Babel transpiles JSX in the browser.
+A small, single-file Trackfolio app. A project timeline, chronological activity view, and project management all work over the same data. No build step, no backend; React loads from a CDN and Babel transpiles JSX in the browser.
 
 **Live**: https://ilstar.github.io/trackfolio/
 
@@ -28,7 +28,7 @@ npm test
 The app starts with sample data from `src/data.js`. Your own data lives in two places:
 
 - **Browser localStorage** — autosaved on every change. Survives reloads.
-- **A JSON file on disk** — opt-in via the **Connect** button (uses the File System Access API on Chromium browsers). Once connected, every change is written through to the file.
+- **A JSON file on disk** — opt-in from the **File** menu (uses the File System Access API on Chromium browsers). Once connected, every change is written through to the file.
 
 If your browser doesn't support FSA (Safari, Firefox), use **Import** / **Export** instead — same JSON format.
 
@@ -48,15 +48,15 @@ If your browser doesn't support FSA (Safari, Firefox), use **Import** / **Export
 - `entries[].type` is one of `info`, `issue`, `milestone`.
 - `entries[].project` is a project `id`, or `null` for unaffiliated entries.
 - `entries[].date` is `YYYY-MM-DD`.
-- `projects[].hidden` is optional; hidden projects and their entries are omitted from the worklog views until unhidden.
+- `projects[].hidden` is optional; hidden projects and their entries are omitted from the main views until unhidden.
 
 ## Files
 
 - `index.html` — entry point; pulls React + Babel from unpkg.
 - `src/app.jsx` — top-level shell, persistence, import/export, file connect.
 - `src/worklog-shared.jsx` — shared dialog and view helpers.
-- `src/worklog-core.jsx` — the feed view.
-- `src/worklog-columns.jsx` — the project-columns view.
+- `src/worklog-core.jsx` — the activity view.
+- `src/worklog-columns.jsx` — the timeline view.
 - `src/utils.js` — date helpers and small utilities.
 - `styles.css` — all styling.
 - `src/data.js` — sample data used on first run.

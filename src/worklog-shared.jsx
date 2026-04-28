@@ -123,7 +123,7 @@ const WorklogShared = (() => {
           <div className={cn('dialog-head')}>
             <div className={cn('dialog-date-wrap')}>
               <span className={cn('dialog-date')}>
-                {mode === 'edit' ? 'Editing' : 'New entry'}
+                {mode === 'edit' ? 'Edit entry' : 'New entry'}
               </span>
               <input
                 className={cn('dateinput')}
@@ -133,7 +133,7 @@ const WorklogShared = (() => {
                 onChange={e => setEntryDate(e.target.value)}
               />
             </div>
-            <span className={cn('kbd-hint')}>esc to close</span>
+            <span className={cn('kbd-hint')}>Esc to close</span>
           </div>
           <textarea
             ref={inputRef}

@@ -6,7 +6,7 @@ const WorklogCore = (() => {
   const { TODAY } = window.WorklogData;
   const { Glyph, EntryDialog } = S;
 
-  function App({ p, scale, density, groupByProject, headerSubtitle, projects, allProjects, entries, setProjects, setEntries }) {
+  function App({ p, title, scale, density, groupByProject, headerSubtitle, projects, allProjects, entries, setProjects, setEntries }) {
     const [filter, setFilter] = useState(null);
     const [dialog, setDialog] = useState(null); // null | {mode:'add', date} | {mode:'edit', entry}
     const [hovered, setHovered] = useState(null);
@@ -54,7 +54,7 @@ const WorklogCore = (() => {
       <div className={cn('root')} style={{ '--row-gap': rowGap + 'px', '--day-pad': dayPad + 'px' }}>
         <header className={cn('header')}>
           <div className={cn('title')}>
-            <h1>Worklog</h1>
+            <h1>{title}</h1>
             <div className={cn('sub')}>{headerSubtitle}</div>
           </div>
           <div className={cn('controls')}>
@@ -234,7 +234,7 @@ const WorklogCore = (() => {
         </div>
         <div className={cn('day-body')}>
           {entries.length === 0 && (
-            <div className={cn('day-blank')} onClick={onAdd}>+ add an entry</div>
+            <div className={cn('day-blank')} onClick={onAdd}>+ Add entry</div>
           )}
           {!groupByProject && entries.map(renderEntry)}
           {groupByProject && Object.entries(grouped).map(([pid, es]) => {
@@ -289,7 +289,7 @@ const WorklogCore = (() => {
         </div>
         <div className={cn('day-body')}>
           {entries.length === 0 && (
-            <div className={cn('day-blank')} onClick={onAdd}>+ add an entry</div>
+            <div className={cn('day-blank')} onClick={onAdd}>+ Add entry</div>
           )}
           {!groupByProject && entries.map(e => (
             <Entry key={e.id} p={p} entry={e} projects={projects} compact={compact} hovered={hovered} setHovered={setHovered} onEdit={onEdit} />

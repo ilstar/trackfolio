@@ -6,7 +6,7 @@ const WorklogColumns = (() => {
   const { TODAY } = window.WorklogData;
   const { Glyph, EntryDialog } = S;
 
-  function App({ scale, density, headerSubtitle, projects, allProjects, entries, setProjects, setEntries, columnOrder, setColumnOrder }) {
+  function App({ title, scale, density, headerSubtitle, projects, allProjects, entries, setProjects, setEntries, columnOrder, setColumnOrder }) {
     const [dialog, setDialog] = useState(null); // null | {mode:'add', date, projectId} | {mode:'edit', entry}
     const [hovered, setHovered] = useState(null);
     const [hoveredCol, setHoveredCol] = useState(null);
@@ -123,7 +123,7 @@ const WorklogColumns = (() => {
       <div className="wlCol-root" style={{ '--day-px': dayPx + 'px' }}>
         <header className="wlCol-header">
           <div className="wlCol-title">
-            <h1>Worklog</h1>
+            <h1>{title}</h1>
             <div className="wlCol-sub">{headerSubtitle}</div>
           </div>
           <div className="wlCol-controls">
@@ -190,7 +190,7 @@ const WorklogColumns = (() => {
                     )}
                     <div className="wlCol-axis-dow">{U.dayShort(d.getDay())}</div>
                     <div className="wlCol-axis-day">{d.getDate()}</div>
-                    {isToday && <div className="wlCol-axis-today">now</div>}
+                    {isToday && <div className="wlCol-axis-today">Today</div>}
                   </div>
                 );
 
@@ -229,7 +229,7 @@ const WorklogColumns = (() => {
                       <div className="wlCol-axis-month">{U.monthShort(m)}</div>
                     )}
                     <div className="wlCol-axis-day">{`${monday.getDate()}–${sunday.getDate()}`}</div>
-                    {containsToday && <div className="wlCol-axis-today">now</div>}
+                    {containsToday && <div className="wlCol-axis-today">Today</div>}
                   </div>
                 );
 
