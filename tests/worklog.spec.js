@@ -23,6 +23,23 @@ test('renders the default columns view and switches between tabs', async ({ page
   await expect(page.getByLabel('Rename Atlas Migration')).toBeVisible();
 });
 
+test('keeps timeline width compact by default and persists full-screen preference', async ({ page }) => {
+  const views = page.locator('.views');
+  const fullScreen = page.getByRole('checkbox', { name: 'Full screen' });
+
+  await expect(page.locator('.wlCol-root')).toBeVisible();
+  await expect(views).not.toHaveClass(/views--full/);
+  await expect(fullScreen).not.toBeChecked();
+
+  await fullScreen.check();
+  await expect(views).toHaveClass(/views--full/);
+
+  await page.reload();
+  await expect(page.locator('.wlCol-root')).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'Full screen' })).toBeChecked();
+  await expect(page.locator('.views')).toHaveClass(/views--full/);
+});
+
 test('adds a new entry from the columns view', async ({ page }) => {
   await page.getByRole('button', { name: /New entry/ }).click();
   await expect(page.locator('.wlCol-dialog').getByText('New entry', { exact: true })).toBeVisible();

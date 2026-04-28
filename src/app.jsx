@@ -562,6 +562,7 @@ function App() {
   const [view, setView] = useState('columns');
   const [scale, setScale] = usePersistedState('worklog.scale', 'week');
   const [groupByProject, setGroupByProject] = usePersistedState('worklog.groupByProject', false);
+  const [timelineFullScreen, setTimelineFullScreen] = usePersistedState('worklog.timelineFullScreen', false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   const store = useWorklogStore();
@@ -663,12 +664,22 @@ function App() {
             Group by project
           </label>
         )}
+        {view === 'columns' && (
+          <label className="tweaks-toggle">
+            <input
+              type="checkbox"
+              checked={timelineFullScreen}
+              onChange={e => setTimelineFullScreen(e.target.checked)}
+            />
+            Full screen
+          </label>
+        )}
         {view !== 'projects' && <span className="tweaks-hint"><b>/</b> or ⌘K to add · <b>?</b> shortcuts</span>}
         <span className="tweaks-spacer" />
         <DataControls store={store} />
       </div>
 
-      <div className={`views ${view === 'columns' ? 'views--full' : ''}`}>
+      <div className={`views ${view === 'columns' && timelineFullScreen ? 'views--full' : ''}`}>
         <div className="view-card">
           {view === 'projects' ? (
             <ProjectManager
