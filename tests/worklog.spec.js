@@ -55,3 +55,69 @@ test('hides and unhides a project', async ({ page }) => {
   await expect(atlasRow).toBeVisible();
   await expect(page.getByText('5 visible · 0 hidden')).toBeVisible();
 });
+
+test('switches tabs and time scale with keyboard shortcuts', async ({ page }) => {
+  await expect(page.locator('.wlCol-root')).toBeVisible();
+
+  await page.keyboard.press('2');
+  await expect(page.getByRole('button', { name: 'Feed' })).toHaveClass(/is-on/);
+  await expect(page.locator('.wlC-root')).toBeVisible();
+
+  await page.keyboard.press('d');
+  await expect(page.getByRole('button', { name: 'Day' })).toHaveClass(/is-on/);
+
+  await page.keyboard.press('w');
+  await expect(page.getByRole('button', { name: 'Week' })).toHaveClass(/is-on/);
+
+  await page.keyboard.press('3');
+  await expect(page.getByRole('button', { name: 'Projects', exact: true })).toHaveClass(/is-on/);
+  await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible();
+
+  await page.keyboard.press('1');
+  await expect(page.getByRole('button', { name: 'Project columns' })).toHaveClass(/is-on/);
+  await expect(page.locator('.wlCol-root')).toBeVisible();
+});
+
+test('shows and closes keyboard shortcut help', async ({ page }) => {
+  await expect(page.locator('.wlCol-root')).toBeVisible();
+  await page.keyboard.press('?');
+
+  const help = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
+  await expect(help).toBeVisible();
+  await expect(help.getByText('Project columns')).toBeVisible();
+  await expect(help.getByText('Day view')).toBeVisible();
+  await expect(help.getByText('New entry')).toHaveCount(2);
+
+  await page.keyboard.press('Escape');
+  await expect(help).toBeHidden();
+});
+
+test('does not run app shortcuts while typing', async ({ page }) => {
+  await expect(page.locator('.wlCol-root')).toBeVisible();
+  await page.getByRole('button', { name: 'Projects', exact: true }).click();
+  const rename = page.getByLabel('Rename Atlas Migration');
+  await rename.focus();
+  await rename.press('End');
+  await page.keyboard.press('1');
+
+  await expect(page.getByRole('button', { name: 'Projects', exact: true })).toHaveClass(/is-on/);
+  await expect(rename).toHaveValue('Atlas Migration1');
+
+  await page.getByRole('button', { name: 'Project columns' }).click();
+  await page.keyboard.press('/');
+  await expect(page.locator('.wlCol-dialog').getByText('New entry', { exact: true })).toBeVisible();
+
+  const entryText = page.getByPlaceholder('What happened?');
+  await page.keyboard.press('2');
+  await page.keyboard.press('?');
+
+  await expect(page.getByRole('button', { name: 'Project columns' })).toHaveClass(/is-on/);
+  await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toHaveCount(0);
+  await expect(entryText).toHaveValue('2?');
+});
+
+test('keeps the existing new-entry shortcut', async ({ page }) => {
+  await expect(page.locator('.wlCol-root')).toBeVisible();
+  await page.keyboard.press('/');
+  await expect(page.locator('.wlCol-dialog').getByText('New entry', { exact: true })).toBeVisible();
+});

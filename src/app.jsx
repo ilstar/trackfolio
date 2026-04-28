@@ -243,6 +243,11 @@ function useWorklogStore() {
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
+function isEditableTarget(target) {
+  const tag = target?.tagName;
+  return target?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag);
+}
+
 function Seg({ value, options, onChange }) {
   return (
     <div className="tweaks-seg">
@@ -253,6 +258,74 @@ function Seg({ value, options, onChange }) {
           onClick={() => onChange(opt.value)}
         >{opt.label}</button>
       ))}
+    </div>
+  );
+}
+
+function ShortcutHelp({ onClose }) {
+  const groups = [
+    {
+      label: 'Navigate',
+      items: [
+        { keys: ['1'], action: 'Project columns' },
+        { keys: ['2'], action: 'Feed' },
+        { keys: ['3'], action: 'Projects' },
+      ],
+    },
+    {
+      label: 'Time Scale',
+      items: [
+        { keys: ['D'], action: 'Day view' },
+        { keys: ['W'], action: 'Week view' },
+      ],
+    },
+    {
+      label: 'Entries',
+      items: [
+        { keys: ['/'], action: 'New entry' },
+        { keys: ['⌘K', 'Ctrl K'], action: 'New entry' },
+      ],
+    },
+    {
+      label: 'Help',
+      items: [
+        { keys: ['?'], action: 'Show shortcuts' },
+        { keys: ['Esc'], action: 'Close dialogs and menus' },
+      ],
+    },
+  ];
+
+  return (
+    <div className="shortcut-dialog-bg" onClick={onClose}>
+      <div
+        className="shortcut-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shortcut-dialog-title"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="shortcut-dialog-head">
+          <h2 id="shortcut-dialog-title">Keyboard shortcuts</h2>
+          <button className="shortcut-close" onClick={onClose} aria-label="Close shortcuts">Esc</button>
+        </div>
+        <div className="shortcut-groups">
+          {groups.map(group => (
+            <div className="shortcut-group" key={group.label}>
+              <div className="shortcut-group-label">{group.label}</div>
+              <div className="shortcut-rows">
+                {group.items.map(item => (
+                  <div className="shortcut-row" key={`${group.label}-${item.action}-${item.keys.join('-')}`}>
+                    <div className="shortcut-keys">
+                      {item.keys.map(key => <kbd key={key}>{key}</kbd>)}
+                    </div>
+                    <div className="shortcut-action">{item.action}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -486,6 +559,7 @@ function App() {
   const [view, setView] = useState('columns');
   const [scale, setScale] = usePersistedState('worklog.scale', 'week');
   const [groupByProject, setGroupByProject] = usePersistedState('worklog.groupByProject', false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   const store = useWorklogStore();
 
@@ -512,6 +586,41 @@ function App() {
     { value: 'feed', label: 'Feed' },
     { value: 'projects', label: 'Projects' },
   ];
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape' && shortcutsOpen) {
+        e.preventDefault();
+        setShortcutsOpen(false);
+        return;
+      }
+      if (shortcutsOpen) return;
+      if (isEditableTarget(e.target) || e.altKey || e.metaKey || e.ctrlKey) return;
+
+      const key = e.key.toLowerCase();
+      if (e.key === '?') {
+        e.preventDefault();
+        setShortcutsOpen(true);
+      } else if (key === '1') {
+        e.preventDefault();
+        setView('columns');
+      } else if (key === '2') {
+        e.preventDefault();
+        setView('feed');
+      } else if (key === '3') {
+        e.preventDefault();
+        setView('projects');
+      } else if (view !== 'projects' && key === 'd') {
+        e.preventDefault();
+        setScale('day');
+      } else if (view !== 'projects' && key === 'w') {
+        e.preventDefault();
+        setScale('week');
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [shortcutsOpen, view, setScale]);
 
   return (
     <div className="app">
@@ -551,7 +660,7 @@ function App() {
             Group by project
           </label>
         )}
-        {view !== 'projects' && <span className="tweaks-hint">press <b>/</b> or ⌘K to add</span>}
+        {view !== 'projects' && <span className="tweaks-hint"><b>/</b> or ⌘K to add · <b>?</b> shortcuts</span>}
         <span className="tweaks-spacer" />
         <DataControls store={store} />
       </div>
@@ -593,6 +702,7 @@ function App() {
           )}
         </div>
       </div>
+      {shortcutsOpen && <ShortcutHelp onClose={() => setShortcutsOpen(false)} />}
     </div>
   );
 }
