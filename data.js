@@ -8,12 +8,18 @@ window.WorklogData = (() => {
     { id: 'p5', name: 'Internal Tools', color: 'oklch(0.65 0.12 75)' },
   ];
 
-  // Anchor: today is April 25, 2026 (Saturday)
-  const TODAY = new Date(2026, 3, 25);
+  const TODAY = new Date();
+  TODAY.setHours(0, 0, 0, 0);
+  const fmtDate = (date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
   const d = (offsetDays) => {
     const x = new Date(TODAY);
     x.setDate(x.getDate() + offsetDays);
-    return x.toISOString().slice(0, 10);
+    return fmtDate(x);
   };
 
   const ENTRIES = [

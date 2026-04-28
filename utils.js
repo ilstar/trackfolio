@@ -4,7 +4,12 @@ window.WorklogUtils = (() => {
     const [y, m, d] = s.split('-').map(Number);
     return new Date(y, m - 1, d);
   };
-  const fmtDate = (date) => date.toISOString().slice(0, 10);
+  const fmtDate = (date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
   const sameDay = (a, b) => fmtDate(a) === fmtDate(b);
   const dayOfWeek = (date) => date.getDay(); // 0 = Sun
   const monthName = (i) => ['January','February','March','April','May','June','July','August','September','October','November','December'][i];
