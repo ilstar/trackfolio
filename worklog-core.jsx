@@ -440,15 +440,13 @@ const WorklogCore = (() => {
       onSubmit({ date: entryDate, type, text: text.trim(), project: project.trim() || null });
     };
 
-    const d = U.parseDate(entryDate || date);
     return (
       <div className={cn('dialog-bg')} onClick={onCancel}>
         <div className={cn('dialog')} onClick={e => e.stopPropagation()}>
           <div className={cn('dialog-head')}>
             <div className={cn('dialog-date-wrap')}>
               <span className={cn('dialog-date')}>
-                {mode === 'edit' ? 'Editing · ' : ''}
-                {U.dayName(d.getDay())}, {U.monthName(d.getMonth())} {d.getDate()}
+                {mode === 'edit' ? 'Editing' : 'New entry'}
               </span>
               <input
                 className={cn('dateinput')}
