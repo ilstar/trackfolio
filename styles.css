@@ -1322,7 +1322,7 @@ body {
 
 .wlCol-pip {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 5px;
   position: relative;
   cursor: pointer;
@@ -1352,9 +1352,8 @@ body {
   font-size: 10.5px;
   line-height: 1.25;
   color: var(--ink-1);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
   flex: 1 1 auto;
   min-width: 0;
   letter-spacing: -0.005em;
@@ -1363,9 +1362,6 @@ body {
 .wlCol-pip.t-milestone .wlCol-pip-peek { font-weight: 600; }
 .wlCol-pip.is-hovered {
   background: color-mix(in oklch, var(--proj) 18%, transparent);
-}
-.wlCol-pip.is-hovered .wlCol-pip-peek {
-  white-space: normal;
 }
 .wlCol-pip:not(.has-peek).is-hovered {
   background: var(--bg);

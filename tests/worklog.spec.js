@@ -79,6 +79,26 @@ test('keeps the Monday divider below day rows with no accent stripe', async ({ p
   expect(weekStyles.beforeContent).toBe('none');
 });
 
+test('shows full entry content in timeline day view', async ({ page }) => {
+  await page.getByRole('button', { name: 'Day' }).click();
+
+  const entryText = page.locator('.wlCol-pip-peek').filter({ hasText: 'Reviewed schema diff with infra team' });
+  await expect(entryText).toBeVisible();
+
+  const textStyles = await entryText.evaluate(el => {
+    const style = window.getComputedStyle(el);
+    return {
+      whiteSpace: style.whiteSpace,
+      overflow: style.overflow,
+      textOverflow: style.textOverflow,
+    };
+  });
+
+  expect(textStyles.whiteSpace).toBe('normal');
+  expect(textStyles.overflow).toBe('visible');
+  expect(textStyles.textOverflow).toBe('clip');
+});
+
 test('adds a new entry from the columns view', async ({ page }) => {
   await page.getByRole('button', { name: /New entry/ }).click();
   await expect(page.locator('.wlCol-dialog').getByText('New entry', { exact: true })).toBeVisible();
