@@ -13,6 +13,16 @@ python3 -m http.server 8000
 # open http://localhost:8000
 ```
 
+## Test
+
+The browser tests use Playwright and run against the same static app that ships to GitHub Pages.
+
+```sh
+npm install
+npm run test:install
+npm test
+```
+
 ## Data
 
 The app starts with sample data from `data.js`. Your own data lives in two places:

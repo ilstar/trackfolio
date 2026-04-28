@@ -1,0 +1,14 @@
+{
+  "name": "trackfolio",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test:install": "playwright install chromium",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  }
+}
