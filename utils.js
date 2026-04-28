@@ -30,11 +30,15 @@ window.WorklogUtils = (() => {
     if (!entries.length) return [fmtDate(today)];
     const dates = entries.map(e => parseDate(e.date));
     let min = dates[0];
-    for (const d of dates) if (d < min) min = d;
+    let max = today;
+    for (const d of dates) {
+      if (d < min) min = d;
+      if (d > max) max = d;
+    }
     const start = new Date(min);
     start.setDate(start.getDate() - 2);
     const out = [];
-    const cursor = new Date(today);
+    const cursor = new Date(max);
     while (cursor >= start) {
       out.push(fmtDate(cursor));
       cursor.setDate(cursor.getDate() - 1);
@@ -78,6 +82,7 @@ window.WorklogUtils = (() => {
   const relativeLabel = (dateStr, today) => {
     const d = parseDate(dateStr);
     const diff = Math.round((today - d) / (24*60*60*1000));
+    if (diff < 0) return null;
     if (diff === 0) return 'Today';
     if (diff === 1) return 'Yesterday';
     if (diff < 7) return `${diff} days ago`;

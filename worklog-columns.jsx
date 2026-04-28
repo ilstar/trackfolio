@@ -106,13 +106,13 @@ const WorklogColumns = (() => {
       const id = 'e' + Date.now();
       let pid = projectId && projectId !== '__none' ? projectId : null;
       if (!pid && payload.project) pid = resolveProjectId(payload.project);
-      setEntries(es => [...es, { id, date, type: payload.type, project: pid, text: payload.text }]);
+      setEntries(es => [...es, { id, date: payload.date || date, type: payload.type, project: pid, text: payload.text }]);
       setDialog(null);
     };
 
     const handleUpdate = (id, payload) => {
       const pid = resolveProjectId(payload.project);
-      setEntries(es => es.map(e => e.id === id ? { ...e, type: payload.type, text: payload.text, project: pid } : e));
+      setEntries(es => es.map(e => e.id === id ? { ...e, date: payload.date, type: payload.type, text: payload.text, project: pid } : e));
       setDialog(null);
     };
 
@@ -379,6 +379,7 @@ const WorklogColumns = (() => {
   function EntryDialog({ mode, date, projectId, initialEntry, projects, onCancel, onSubmit, onDelete }) {
     const [type, setType] = useState(initialEntry?.type || 'info');
     const [text, setText] = useState(initialEntry?.text || '');
+    const [entryDate, setEntryDate] = useState(date);
     const [project, setProject] = useState(() => {
       if (initialEntry?.project) {
         return projects.find(p => p.id === initialEntry.project)?.name || '';
@@ -428,19 +429,28 @@ const WorklogColumns = (() => {
     };
 
     const submit = () => {
-      if (!text.trim()) return;
-      onSubmit({ type, text: text.trim(), project: project.trim() || null });
+      if (!text.trim() || !entryDate) return;
+      onSubmit({ date: entryDate, type, text: text.trim(), project: project.trim() || null });
     };
 
-    const d = U.parseDate(date);
+    const d = U.parseDate(entryDate || date);
     return (
       <div className="wlCol-dialog-bg" onClick={onCancel}>
         <div className="wlCol-dialog" onClick={e => e.stopPropagation()}>
           <div className="wlCol-dialog-head">
-            <span className="wlCol-dialog-date">
-              {mode === 'edit' ? 'Editing · ' : ''}
-              {U.dayName(d.getDay())}, {U.monthName(d.getMonth())} {d.getDate()}
-            </span>
+            <div className="wlCol-dialog-date-wrap">
+              <span className="wlCol-dialog-date">
+                {mode === 'edit' ? 'Editing · ' : ''}
+                {U.dayName(d.getDay())}, {U.monthName(d.getMonth())} {d.getDate()}
+              </span>
+              <input
+                className="wlCol-dateinput"
+                type="date"
+                aria-label="Entry date"
+                value={entryDate}
+                onChange={e => setEntryDate(e.target.value)}
+              />
+            </div>
             <span className="wlCol-kbd-hint">esc to close</span>
           </div>
           <textarea

@@ -74,13 +74,13 @@ const WorklogCore = (() => {
     const handleAdd = (date, payload) => {
       const id = 'e' + Date.now();
       const projectId = resolveProject(payload.project);
-      setEntries(es => [...es, { id, date, type: payload.type, project: projectId, text: payload.text }]);
+      setEntries(es => [...es, { id, date: payload.date || date, type: payload.type, project: projectId, text: payload.text }]);
       setDialog(null);
     };
 
     const handleUpdate = (id, payload) => {
       const projectId = resolveProject(payload.project);
-      setEntries(es => es.map(e => e.id === id ? { ...e, type: payload.type, text: payload.text, project: projectId } : e));
+      setEntries(es => es.map(e => e.id === id ? { ...e, date: payload.date, type: payload.type, text: payload.text, project: projectId } : e));
       setDialog(null);
     };
 
@@ -389,6 +389,7 @@ const WorklogCore = (() => {
     const cn = (s) => `${p}-${s}`;
     const [type, setType] = useState(initialEntry?.type || 'info');
     const [text, setText] = useState(initialEntry?.text || '');
+    const [entryDate, setEntryDate] = useState(date);
     const [project, setProject] = useState(() => {
       if (!initialEntry?.project) return '';
       return projects.find(pr => pr.id === initialEntry.project)?.name || '';
@@ -435,19 +436,28 @@ const WorklogCore = (() => {
     };
 
     const submit = () => {
-      if (!text.trim()) return;
-      onSubmit({ type, text: text.trim(), project: project.trim() || null });
+      if (!text.trim() || !entryDate) return;
+      onSubmit({ date: entryDate, type, text: text.trim(), project: project.trim() || null });
     };
 
-    const d = U.parseDate(date);
+    const d = U.parseDate(entryDate || date);
     return (
       <div className={cn('dialog-bg')} onClick={onCancel}>
         <div className={cn('dialog')} onClick={e => e.stopPropagation()}>
           <div className={cn('dialog-head')}>
-            <span className={cn('dialog-date')}>
-              {mode === 'edit' ? 'Editing · ' : ''}
-              {U.dayName(d.getDay())}, {U.monthName(d.getMonth())} {d.getDate()}
-            </span>
+            <div className={cn('dialog-date-wrap')}>
+              <span className={cn('dialog-date')}>
+                {mode === 'edit' ? 'Editing · ' : ''}
+                {U.dayName(d.getDay())}, {U.monthName(d.getMonth())} {d.getDate()}
+              </span>
+              <input
+                className={cn('dateinput')}
+                type="date"
+                aria-label="Entry date"
+                value={entryDate}
+                onChange={e => setEntryDate(e.target.value)}
+              />
+            </div>
             <span className={cn('kbd-hint')}>esc to close</span>
           </div>
           <textarea

@@ -752,10 +752,28 @@ body {
 .wlC-dialog-head {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 8px;
 }
+.wlC-dialog-date-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 .wlC-dialog-date { font-size: 13px; font-weight: 600; }
+.wlC-dateinput {
+  border: 1px solid var(--rule);
+  background: var(--bg);
+  border-radius: 7px;
+  padding: 5px 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  outline: none;
+}
+.wlC-dateinput:focus { border-color: var(--accent); color: var(--ink-1); }
 .wlC-kbd-hint { font-size: 11px; color: var(--ink-4); font-family: 'JetBrains Mono', monospace; }
 .wlC-dialog-input {
   width: 100%;
@@ -1323,10 +1341,27 @@ body {
   font-family: inherit;
 }
 .wlCol-dialog-head {
-  display: flex; justify-content: space-between; align-items: baseline;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
   margin-bottom: 8px;
 }
+.wlCol-dialog-date-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 .wlCol-dialog-date { font-size: 13px; font-weight: 600; }
+.wlCol-dateinput {
+  border: 1px solid var(--rule);
+  background: var(--bg);
+  border-radius: 7px;
+  padding: 5px 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  outline: none;
+}
+.wlCol-dateinput:focus { border-color: var(--accent); color: var(--ink-1); }
 .wlCol-kbd-hint { font-size: 11px; color: var(--ink-4); font-family: 'JetBrains Mono', monospace; }
 .wlCol-dialog-input {
   width: 100%; border: none; background: transparent; resize: none; outline: none;
