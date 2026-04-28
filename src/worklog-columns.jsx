@@ -185,11 +185,13 @@ const WorklogColumns = (() => {
                 out.push(
                   <div key={'ax' + ds}
                     className={`wlCol-axis ${isToday ? 'is-today' : ''} ${isWeekend ? 'is-weekend' : ''} ${isMonday ? 'is-monday' : ''} ${isFirstOfMonth ? 'is-month-start' : ''}`}>
-                    {isFirstOfMonth && (
-                      <div className="wlCol-axis-month">{U.monthShort(m)}</div>
-                    )}
-                    <div className="wlCol-axis-dow">{U.dayShort(d.getDay())}</div>
-                    <div className="wlCol-axis-day">{d.getDate()}</div>
+                    <div className="wlCol-axis-date">
+                      {isFirstOfMonth && (
+                        <div className="wlCol-axis-month">{U.monthShort(m)}</div>
+                      )}
+                      <div className="wlCol-axis-dow">{U.dayShort(d.getDay())}</div>
+                      <div className="wlCol-axis-day">{d.getDate()}</div>
+                    </div>
                     {isToday && <div className="wlCol-axis-today">Today</div>}
                   </div>
                 );
@@ -225,10 +227,12 @@ const WorklogColumns = (() => {
                 out.push(
                   <div key={'ax' + row.key}
                     className={`wlCol-axis is-week is-monday ${containsToday ? 'is-today' : ''} ${isFirstOfMonth ? 'is-month-start' : ''}`}>
-                    {isFirstOfMonth && (
-                      <div className="wlCol-axis-month">{U.monthShort(m)}</div>
-                    )}
-                    <div className="wlCol-axis-day">{`${monday.getDate()}–${sunday.getDate()}`}</div>
+                    <div className="wlCol-axis-date">
+                      {isFirstOfMonth && (
+                        <div className="wlCol-axis-month">{U.monthShort(m)}</div>
+                      )}
+                      <div className="wlCol-axis-day">{`${monday.getDate()}–${sunday.getDate()}`}</div>
+                    </div>
                     {containsToday && <div className="wlCol-axis-today">Today</div>}
                   </div>
                 );
