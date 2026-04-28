@@ -139,7 +139,7 @@ const WorklogColumns = (() => {
           <span><Glyph type="milestone" /> milestone</span>
         </div>
 
-        <div className="wlCol-grid" style={{ gridTemplateColumns: `84px repeat(${columns.length}, minmax(180px, 1fr))` }}>
+        <div className="wlCol-grid" style={{ gridTemplateColumns: `96px repeat(${columns.length}, minmax(180px, 1fr))` }}>
           <div className="wlCol-corner" />
           {columns.map(p => {
             const cls = [

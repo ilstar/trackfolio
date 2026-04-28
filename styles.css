@@ -1169,6 +1169,7 @@ body {
   min-width: 0;
 }
 .wlCol-axis-month {
+  flex: 0 0 auto;
   font-weight: 600;
   color: var(--ink-1);
   font-size: 10px;

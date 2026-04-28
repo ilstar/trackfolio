@@ -99,6 +99,21 @@ test('shows full entry content in timeline day view', async ({ page }) => {
   expect(textStyles.textOverflow).toBe('clip');
 });
 
+test('does not clip month labels in timeline day view', async ({ page }) => {
+  await page.getByRole('button', { name: 'Day' }).click();
+
+  const monthLabels = page.locator('.wlCol-axis-month');
+  await expect(monthLabels.first()).toBeVisible();
+
+  const clippedLabels = await monthLabels.evaluateAll(labels =>
+    labels
+      .filter(label => label.scrollWidth > label.clientWidth)
+      .map(label => label.textContent)
+  );
+
+  expect(clippedLabels).toEqual([]);
+});
+
 test('adds a new entry from the columns view', async ({ page }) => {
   await page.getByRole('button', { name: /New entry/ }).click();
   await expect(page.locator('.wlCol-dialog').getByText('New entry', { exact: true })).toBeVisible();
