@@ -7,6 +7,7 @@ const DATA_FILE_DESCRIPTION = 'Trackfolio data';
 const FSA_SUPPORTED = typeof window !== 'undefined' && 'showSaveFilePicker' in window;
 const STORE_KEY = 'worklog.data';
 const HANDLE_KEY = 'handle';
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // --- tiny IndexedDB key-value store for the file handle ---
 function idbOpen() {
@@ -78,6 +79,42 @@ function usePersistedState(key, initial) {
     try { window.localStorage.setItem(key, JSON.stringify(value)); } catch {}
   }, [key, value]);
   return [value, setValue];
+}
+
+function startOfToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+function msUntilTomorrow(today) {
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return Math.max(1, tomorrow.getTime() - Date.now() + 1000);
+}
+
+function useToday() {
+  const [today, setToday] = useState(() => startOfToday());
+
+  useEffect(() => {
+    const refreshToday = () => {
+      const next = startOfToday();
+      setToday(current => current.getTime() === next.getTime() ? current : next);
+    };
+    const timeout = window.setTimeout(refreshToday, Math.min(msUntilTomorrow(today), MS_PER_DAY));
+
+    window.addEventListener('focus', refreshToday);
+    window.addEventListener('pageshow', refreshToday);
+    document.addEventListener('visibilitychange', refreshToday);
+    return () => {
+      window.clearTimeout(timeout);
+      window.removeEventListener('focus', refreshToday);
+      window.removeEventListener('pageshow', refreshToday);
+      document.removeEventListener('visibilitychange', refreshToday);
+    };
+  }, [today]);
+
+  return today;
 }
 
 function useWorklogStore() {
@@ -567,7 +604,7 @@ function App() {
 
   const store = useWorklogStore();
 
-  const today = window.WorklogData.TODAY;
+  const today = useToday();
   const monthLabel = MONTH_NAMES[today.getMonth()] + ' ' + today.getFullYear();
   const hiddenProjectIds = React.useMemo(
     () => new Set(store.projects.filter(p => p.hidden).map(p => p.id)),
@@ -692,6 +729,7 @@ function App() {
               p="wlC"
               title={APP_NAME}
               headerSubtitle={monthLabel + ' · ' + totalEntries + ' entries'}
+              today={today}
               scale={scale}
               density="medium"
               groupByProject={groupByProject}
@@ -705,6 +743,7 @@ function App() {
             <window.WorklogColumns
               title={APP_NAME}
               headerSubtitle={monthLabel + ' · ' + projectCount + ' lanes'}
+              today={today}
               scale={scale}
               density="airy"
               projects={activeProjects}

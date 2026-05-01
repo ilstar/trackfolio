@@ -114,6 +114,48 @@ test('does not clip month labels in timeline day view', async ({ page }) => {
   expect(clippedLabels).toEqual([]);
 });
 
+test('updates the latest day after the page crosses midnight', async ({ page }) => {
+  await page.addInitScript(() => {
+    const RealDate = Date;
+    window.__mockNow = '2026-04-30T12:00:00';
+    window.__setMockNow = (value) => { window.__mockNow = value; };
+
+    class MockDate extends RealDate {
+      constructor(...args) {
+        super(...(args.length ? args : [window.__mockNow]));
+      }
+
+      static now() {
+        return new RealDate(window.__mockNow).getTime();
+      }
+    }
+
+    window.Date = MockDate;
+  });
+  await page.goto('/');
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole('button', { name: 'Day' }).click();
+  const latestDay = page.locator('.wlCol-axis:not(.is-week)').first();
+  await expect(latestDay.locator('.wlCol-axis-month')).toHaveText('Apr');
+  await expect(latestDay.locator('.wlCol-axis-day')).toHaveText('30');
+  await expect(latestDay.locator('.wlCol-axis-today')).toHaveText('Today');
+
+  await page.evaluate(() => {
+    window.__setMockNow('2026-05-01T09:00:00');
+    window.dispatchEvent(new Event('focus'));
+  });
+
+  await expect(page.locator('.wlCol-sub')).toContainText('May 2026');
+  await expect(latestDay.locator('.wlCol-axis-month')).toHaveText('May');
+  await expect(latestDay.locator('.wlCol-axis-day')).toHaveText('1');
+  await expect(latestDay.locator('.wlCol-axis-today')).toHaveText('Today');
+
+  await page.getByRole('button', { name: /New entry/ }).click();
+  await expect(page.getByLabel('Entry date')).toHaveValue('2026-05-01');
+});
+
 test('adds a new entry from the columns view', async ({ page }) => {
   await page.getByRole('button', { name: /New entry/ }).click();
   await expect(page.locator('.wlCol-dialog').getByText('New entry', { exact: true })).toBeVisible();

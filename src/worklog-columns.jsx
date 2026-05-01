@@ -3,19 +3,18 @@ const WorklogColumns = (() => {
   const { useState, useMemo } = React;
   const U = window.WorklogUtils;
   const S = window.WorklogShared;
-  const { TODAY } = window.WorklogData;
   const { Glyph, EntryDialog } = S;
 
-  function App({ title, scale, density, headerSubtitle, projects, allProjects, entries, setProjects, setEntries, columnOrder, setColumnOrder }) {
+  function App({ title, scale, density, headerSubtitle, today = window.WorklogData.TODAY, projects, allProjects, entries, setProjects, setEntries, columnOrder, setColumnOrder }) {
     const [dialog, setDialog] = useState(null); // null | {mode:'add', date, projectId} | {mode:'edit', entry}
     const [hovered, setHovered] = useState(null);
     const [hoveredCol, setHoveredCol] = useState(null);
     const [dragId, setDragId] = useState(null);
     const [dragOverId, setDragOverId] = useState(null);
 
-    S.useEntryDialogShortcut(setDialog, () => ({ mode: 'add', date: U.fmtDate(TODAY), projectId: null }));
+    S.useEntryDialogShortcut(setDialog, () => ({ mode: 'add', date: U.fmtDate(today), projectId: null }));
 
-    const dates = useMemo(() => U.buildDateRange(entries, TODAY), [entries]);
+    const dates = useMemo(() => U.buildDateRange(entries, today), [entries, today]);
 
     const dayPx = density === 'airy' ? 40 : density === 'dense' ? 22 : 30;
     const showPeek = density !== 'dense';
@@ -127,7 +126,7 @@ const WorklogColumns = (() => {
             <div className="wlCol-sub">{headerSubtitle}</div>
           </div>
           <div className="wlCol-controls">
-            <button className="wlCol-btn" onClick={() => setDialog({ mode: 'add', date: U.fmtDate(TODAY), projectId: null })}>
+            <button className="wlCol-btn" onClick={() => setDialog({ mode: 'add', date: U.fmtDate(today), projectId: null })}>
               <span className="wlCol-kbd">/</span> New entry
             </button>
           </div>
@@ -169,14 +168,14 @@ const WorklogColumns = (() => {
           {(() => {
             const out = [];
             let lastMonth = -1;
-            const todayStr = U.fmtDate(TODAY);
+            const todayStr = U.fmtDate(today);
 
             rows.forEach((row) => {
               if (row.type === 'day') {
                 const ds = row.date;
                 const d = U.parseDate(ds);
                 const m = d.getMonth();
-                const isToday = U.sameDay(d, TODAY);
+                const isToday = U.sameDay(d, today);
                 const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                 const isMonday = d.getDay() === 1;
                 const isFirstOfMonth = m !== lastMonth;

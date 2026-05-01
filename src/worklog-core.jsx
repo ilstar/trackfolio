@@ -3,21 +3,20 @@ const WorklogCore = (() => {
   const { useState, useMemo } = React;
   const U = window.WorklogUtils;
   const S = window.WorklogShared;
-  const { TODAY } = window.WorklogData;
   const { Glyph, EntryDialog } = S;
 
-  function App({ p, title, scale, density, groupByProject, headerSubtitle, projects, allProjects, entries, setProjects, setEntries }) {
+  function App({ p, title, scale, density, groupByProject, headerSubtitle, today = window.WorklogData.TODAY, projects, allProjects, entries, setProjects, setEntries }) {
     const [filter, setFilter] = useState(null);
     const [dialog, setDialog] = useState(null); // null | {mode:'add', date} | {mode:'edit', entry}
     const [hovered, setHovered] = useState(null);
 
-    S.useEntryDialogShortcut(setDialog, () => ({ mode: 'add', date: U.fmtDate(TODAY) }));
+    S.useEntryDialogShortcut(setDialog, () => ({ mode: 'add', date: U.fmtDate(today) }));
 
     const visible = useMemo(
       () => filter ? entries.filter(e => e.project === filter) : entries,
       [entries, filter]
     );
-    const dates = useMemo(() => U.buildDateRange(visible, TODAY), [visible]);
+    const dates = useMemo(() => U.buildDateRange(visible, today), [visible, today]);
     const byDate = useMemo(() => U.groupByDate(visible), [visible]);
 
     const rowGap = density === 'airy' ? 48 : density === 'dense' ? 14 : 26;
@@ -58,7 +57,7 @@ const WorklogCore = (() => {
             <div className={cn('sub')}>{headerSubtitle}</div>
           </div>
           <div className={cn('controls')}>
-            <button className={cn('btn')} onClick={() => setDialog({ mode: 'add', date: U.fmtDate(TODAY) })}>
+            <button className={cn('btn')} onClick={() => setDialog({ mode: 'add', date: U.fmtDate(today) })}>
               <span className={cn('kbd')}>/</span> New entry
             </button>
           </div>
@@ -120,6 +119,7 @@ const WorklogCore = (() => {
                     weekKey={w.key}
                     monday={w.monday}
                     entries={weekEntries}
+                    today={today}
                     projects={projects}
                     groupByProject={groupByProject}
                     compact={compactDays}
@@ -163,6 +163,7 @@ const WorklogCore = (() => {
                   p={p}
                   date={ds}
                   entries={dayEntries}
+                  today={today}
                   projects={projects}
                   groupByProject={groupByProject}
                   compact={compactDays}
@@ -197,13 +198,13 @@ const WorklogCore = (() => {
     );
   }
 
-  function WeekRow({ p, weekKey, monday, entries, projects, groupByProject, compact, hovered, setHovered, onAdd, onEdit }) {
+  function WeekRow({ p, weekKey, monday, entries, today, projects, groupByProject, compact, hovered, setHovered, onAdd, onEdit }) {
     const cn = (s) => `${p}-${s}`;
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
-    const todayStr = U.fmtDate(TODAY);
+    const todayStr = U.fmtDate(today);
     const containsToday = entries.some(e => e.date === todayStr) ||
-      (monday <= TODAY && TODAY <= sunday);
+      (monday <= today && today <= sunday);
 
     const grouped = groupByProject
       ? entries.reduce((acc, e) => {
@@ -264,11 +265,11 @@ const WorklogCore = (() => {
     );
   }
 
-  function DayRow({ p, date, entries, projects, groupByProject, compact, hovered, setHovered, onAdd, onEdit }) {
+  function DayRow({ p, date, entries, today, projects, groupByProject, compact, hovered, setHovered, onAdd, onEdit }) {
     const cn = (s) => `${p}-${s}`;
     const d = U.parseDate(date);
-    const rel = U.relativeLabel(date, TODAY);
-    const isToday = U.sameDay(d, TODAY);
+    const rel = U.relativeLabel(date, today);
+    const isToday = U.sameDay(d, today);
     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
     const isMonday = d.getDay() === 1;
 
