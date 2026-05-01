@@ -765,6 +765,7 @@ body {
   font-size: 14px;
   color: var(--ink-1);
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 .wlC-entry.t-issue .wlC-entry-text {
   color: oklch(0.45 0.16 30);
@@ -1315,7 +1316,7 @@ body {
 }
 .wlCol-weekitem-text {
   color: var(--ink-1);
-  word-break: break-word;
+  overflow-wrap: anywhere;
   letter-spacing: -0.005em;
 }
 .wlCol-weekitem.t-issue .wlCol-weekitem-text { color: oklch(0.45 0.16 30); }
@@ -1354,6 +1355,7 @@ body {
   line-height: 1.25;
   color: var(--ink-1);
   white-space: normal;
+  overflow-wrap: anywhere;
   overflow: visible;
   flex: 1 1 auto;
   min-width: 0;
@@ -1410,6 +1412,7 @@ body {
   color: var(--bg);
   font-size: 12px;
   margin-bottom: 5px;
+  overflow-wrap: anywhere;
 }
 .wlCol-tip-proj {
   display: inline-flex;

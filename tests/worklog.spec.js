@@ -91,12 +91,31 @@ test('shows full entry content in timeline day view', async ({ page }) => {
       whiteSpace: style.whiteSpace,
       overflow: style.overflow,
       textOverflow: style.textOverflow,
+      overflowWrap: style.overflowWrap,
     };
   });
 
   expect(textStyles.whiteSpace).toBe('normal');
   expect(textStyles.overflow).toBe('visible');
   expect(textStyles.textOverflow).toBe('clip');
+  expect(textStyles.overflowWrap).toBe('anywhere');
+});
+
+test('wraps long unbroken entry text inside timeline cells', async ({ page }) => {
+  const longText = 'get_retailers_with_direct_service_providers';
+
+  await page.getByRole('button', { name: 'Day' }).click();
+  await page.getByRole('button', { name: /New entry/ }).click();
+  await page.getByPlaceholder('What happened?').fill(longText);
+  await page.getByPlaceholder('Project (optional)').fill('Atlas Migration');
+  await page.getByRole('button', { name: /^Save/ }).click();
+
+  const entryText = page.locator('.wlCol-pip-peek', { hasText: longText });
+  await expect(entryText).toBeVisible();
+
+  const textBox = await entryText.boundingBox();
+  const cellBox = await entryText.locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " wlCol-cell ")][1]').boundingBox();
+  expect(textBox.x + textBox.width).toBeLessThanOrEqual(cellBox.x + cellBox.width + 1);
 });
 
 test('does not clip month labels in timeline day view', async ({ page }) => {
